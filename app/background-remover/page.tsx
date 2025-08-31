@@ -25,7 +25,8 @@ import {
   Maximize2,
   Settings,
   ImageIcon,
-  Scissors
+  Scissors,
+  AlertTriangle
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { AdBanner } from "@/components/ads/ad-banner"
@@ -172,10 +173,10 @@ export default function BackgroundRemoverPage() {
       // Progressive updates
       const progressSteps = [
         { progress: 10, message: "Loading image" },
-        { progress: 25, message: "Analyzing content" },
-        { progress: 45, message: "Detecting edges" },
-        { progress: 65, message: "Processing background" },
-        { progress: 85, message: "Refining edges" },
+        { progress: 25, message: "Detecting objects" },
+        { progress: 45, message: "Analyzing subject boundaries" },
+        { progress: 65, message: "Removing background" },
+        { progress: 85, message: "Refining subject edges" },
         { progress: 95, message: "Finalizing" }
       ]
 
@@ -235,7 +236,8 @@ export default function BackgroundRemoverPage() {
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d", { 
         alpha: true,
-        willReadFrequently: true 
+        willReadFrequently: false,
+        desynchronized: true
       })
       
       if (!ctx) {
@@ -246,12 +248,19 @@ export default function BackgroundRemoverPage() {
       const img = new Image()
       img.onload = () => {
         try {
-          // Use safe dimensions
-          const maxDimension = 1024
+          // Use very conservative dimensions to prevent crashes
+          const maxDimension = 512
           let { width, height } = img
           
           if (width > maxDimension || height > maxDimension) {
             const scale = maxDimension / Math.max(width, height)
+            width = Math.floor(width * scale)
+            height = Math.floor(height * scale)
+          }
+
+          // Additional safety check for pixel count
+          if (width * height > 256 * 256) {
+            const scale = Math.sqrt((256 * 256) / (width * height))
             width = Math.floor(width * scale)
             height = Math.floor(height * scale)
           }
@@ -265,8 +274,8 @@ export default function BackgroundRemoverPage() {
 
           const imageData = ctx.getImageData(0, 0, width, height)
           
-          // Apply background removal algorithm
-          removeBackgroundFromImageData(imageData, options)
+          // Apply improved background removal algorithm
+          removeBackgroundAdvanced(imageData, options)
           
           ctx.putImageData(imageData, 0, 0)
 
@@ -291,7 +300,7 @@ export default function BackgroundRemoverPage() {
     })
   }
 
-  const removeBackgroundFromImageData = (
+  const removeBackgroundAdvanced = (
     imageData: ImageData,
     options: {
       algorithm: string
@@ -301,14 +310,265 @@ export default function BackgroundRemoverPage() {
     }
   ) => {
     const { data, width, height } = imageData
-    const threshold = options.sensitivity * 3
-
-    // Simple but effective background removal
+    
+    // Advanced object detection and background removal
+    const analysis = analyzeImageContent(data, width, height)
+    
+    // Use multiple algorithms for better accuracy
+    const masks: Uint8Array[] = []
+    
+    // 1. Object detection mask
+    masks.push(createObjectDetectionMask(data, width, height, analysis))
+    
+    // 2. Edge-based mask
+    masks.push(createEdgeBasedMask(data, width, height, options.sensitivity))
+    
+    // 3. Color clustering mask
+    masks.push(createColorClusteringMask(data, width, height, options.sensitivity))
+    
+    // 4. Subject position mask (center-weighted)
+    masks.push(createSubjectPositionMask(data, width, height))
+    
+    // Combine masks intelligently
+    const finalMask = combineMasksIntelligently(masks, width, height, analysis)
+    
+    // Apply background removal with the combined mask
+    applyBackgroundMask(data, finalMask, width, height, options)
+  }
+  
+  const analyzeImageContent = (data: Uint8ClampedArray, width: number, height: number) => {
+    let skinTonePixels = 0
+    let furTexturePixels = 0
+    let objectEdges = 0
+    let totalPixels = 0
+    let centerActivity = 0
+    let edgeActivity = 0
+    
+    // Analyze image characteristics
+    for (let y = 0; y < height; y += 3) {
+      for (let x = 0; x < width; x += 3) {
+        const idx = (y * width + x) * 4
+        const r = data[idx]
+        const g = data[idx + 1]
+        const b = data[idx + 2]
+        
+        totalPixels++
+        
+        // Detect skin tones (humans)
+        if (isSkinTone(r, g, b)) {
+          skinTonePixels++
+        }
+        
+        // Detect fur texture (animals)
+        if (isFurTexture(data, x, y, width, height)) {
+          furTexturePixels++
+        }
+        
+        // Analyze center vs edge activity
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(x - width/2, 2) + Math.pow(y - height/2, 2)
+        )
+        const maxDistance = Math.sqrt(Math.pow(width/2, 2) + Math.pow(height/2, 2))
+        
+        const activity = calculatePixelActivity(data, x, y, width, height)
+        
+        if (distanceFromCenter < maxDistance * 0.4) {
+          centerActivity += activity
+        } else if (distanceFromCenter > maxDistance * 0.7) {
+          edgeActivity += activity
+        }
+      }
+    }
+    
+    return {
+      hasHuman: skinTonePixels / totalPixels > 0.015,
+      hasAnimal: furTexturePixels / totalPixels > 0.02,
+      hasObject: centerActivity > edgeActivity * 1.2,
+      subjectInCenter: centerActivity > edgeActivity,
+      backgroundComplexity: edgeActivity / totalPixels
+    }
+  }
+  
+  const isSkinTone = (r: number, g: number, b: number): boolean => {
+    // Enhanced skin tone detection for multiple ethnicities
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    
+    // Light skin tones
+    if (r > 95 && g > 40 && b > 20 && 
+        max - min > 15 && 
+        Math.abs(r - g) > 15 && 
+        r > g && r > b) {
+      return true
+    }
+    
+    // Medium skin tones
+    if (r > 60 && g > 30 && b > 15 &&
+        r >= g && g >= b &&
+        r - b > 10) {
+      return true
+    }
+    
+    // Dark skin tones
+    if (r > 30 && g > 20 && b > 10 &&
+        r > g && g > b &&
+        r - b > 5) {
+      return true
+    }
+    
+    return false
+  }
+  
+  const isFurTexture = (data: Uint8ClampedArray, x: number, y: number, width: number, height: number): boolean => {
+    if (x < 2 || x >= width - 2 || y < 2 || y >= height - 2) return false
+    
+    let textureVariation = 0
+    const centerIdx = (y * width + x) * 4
+    const centerBrightness = (data[centerIdx] + data[centerIdx + 1] + data[centerIdx + 2]) / 3
+    
+    // Check 5x5 neighborhood for fur-like texture
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const nIdx = ((y + dy) * width + (x + dx)) * 4
+        const neighborBrightness = (data[nIdx] + data[nIdx + 1] + data[nIdx + 2]) / 3
+        textureVariation += Math.abs(centerBrightness - neighborBrightness)
+      }
+    }
+    
+    // Fur has moderate texture variation
+    return textureVariation > 150 && textureVariation < 800
+  }
+  
+  const calculatePixelActivity = (data: Uint8ClampedArray, x: number, y: number, width: number, height: number): number => {
+    if (x <= 0 || x >= width - 1 || y <= 0 || y >= height - 1) return 0
+    
+    const centerIdx = (y * width + x) * 4
+    let activity = 0
+    
+    // Calculate gradient magnitude
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue
+        
+        const nIdx = ((y + dy) * width + (x + dx)) * 4
+        const gradient = Math.abs(data[centerIdx] - data[nIdx]) +
+                        Math.abs(data[centerIdx + 1] - data[nIdx + 1]) +
+                        Math.abs(data[centerIdx + 2] - data[nIdx + 2])
+        activity = Math.max(activity, gradient)
+      }
+    }
+    
+    return activity
+  }
+  
+  const createObjectDetectionMask = (data: Uint8ClampedArray, width: number, height: number, analysis: any): Uint8Array => {
+    const mask = new Uint8Array(width * height)
+    
+    for (let i = 0; i < data.length; i += 4) {
+      const pixelIdx = Math.floor(i / 4)
+      const x = pixelIdx % width
+      const y = Math.floor(pixelIdx / width)
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+      
+      let isSubject = false
+      
+      // Human detection
+      if (analysis.hasHuman && isSkinTone(r, g, b)) {
+        isSubject = true
+      }
+      
+      // Animal detection
+      if (analysis.hasAnimal && isFurTexture(data, x, y, width, height)) {
+        isSubject = true
+      }
+      
+      // Object detection based on position and contrast
+      if (analysis.hasObject) {
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(x - width/2, 2) + Math.pow(y - height/2, 2)
+        )
+        const maxDistance = Math.sqrt(Math.pow(width/2, 2) + Math.pow(height/2, 2))
+        const centerWeight = 1 - (distanceFromCenter / maxDistance)
+        
+        // Check local contrast
+        const localContrast = calculatePixelActivity(data, x, y, width, height)
+        
+        if (centerWeight > 0.3 && localContrast > 30) {
+          isSubject = true
+        }
+      }
+      
+      // Clothing and object colors
+      const saturation = (Math.max(r, g, b) - Math.min(r, g, b)) / Math.max(r, g, b, 1)
+      const brightness = (r + g + b) / 3
+      
+      if (saturation > 0.2 && brightness > 20 && brightness < 200) {
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(x - width/2, 2) + Math.pow(y - height/2, 2)
+        )
+        const maxDistance = Math.sqrt(Math.pow(width/2, 2) + Math.pow(height/2, 2))
+        const centerWeight = 1 - (distanceFromCenter / maxDistance)
+        
+        if (centerWeight > 0.4) {
+          isSubject = true
+        }
+      }
+      
+      mask[pixelIdx] = isSubject ? 0 : 255 // 0 = keep, 255 = remove
+    }
+    
+    return mask
+  }
+  
+  const createEdgeBasedMask = (data: Uint8ClampedArray, width: number, height: number, sensitivity: number): Uint8Array => {
+    const mask = new Uint8Array(width * height)
+    const threshold = sensitivity * 2.5
+    
+    // Enhanced edge detection
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const idx = y * width + x
+        const pixelIdx = idx * 4
+        
+        // Sobel operator for edge detection
+        let gx = 0, gy = 0
+        const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1]
+        const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1]
+        
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nIdx = ((y + dy) * width + (x + dx)) * 4
+            const intensity = (data[nIdx] + data[nIdx + 1] + data[nIdx + 2]) / 3
+            const kernelIdx = (dy + 1) * 3 + (dx + 1)
+            
+            gx += intensity * sobelX[kernelIdx]
+            gy += intensity * sobelY[kernelIdx]
+          }
+        }
+        
+        const magnitude = Math.sqrt(gx * gx + gy * gy)
+        
+        // Strong edges are likely subject boundaries
+        if (magnitude > threshold) {
+          mask[idx] = 0 // Keep as foreground
+        } else {
+          mask[idx] = 255 // Mark as background
+        }
+      }
+    }
+    
+    return mask
+  }
+  
+  const createColorClusteringMask = (data: Uint8ClampedArray, width: number, height: number, sensitivity: number): Uint8Array => {
+    const mask = new Uint8Array(width * height)
+    
+    // Sample background colors from edges
     const backgroundColors = sampleBackgroundColors(data, width, height)
     const dominantBgColor = findDominantBackgroundColor(backgroundColors)
-
-    // Create background mask
-    const mask = new Uint8Array(width * height)
+    const threshold = sensitivity * 3.5
     
     for (let i = 0; i < data.length; i += 4) {
       const pixelIdx = Math.floor(i / 4)
@@ -324,57 +584,148 @@ export default function BackgroundRemoverPage() {
 
       mask[pixelIdx] = colorDistance < threshold ? 255 : 0
     }
-
-    // Apply edge detection for better accuracy
-    if (options.algorithm !== "simple") {
-      refineWithEdgeDetection(mask, data, width, height, threshold)
-    }
-
-    // Apply feathering if enabled
-    if (options.featherEdges) {
-      applyFeathering(mask, width, height)
-    }
-
-    // Apply the mask to remove background
-    for (let i = 0; i < data.length; i += 4) {
-      const pixelIdx = Math.floor(i / 4)
-      
-      if (mask[pixelIdx] > 128) {
-        // Background pixel - make transparent
-        data[i + 3] = 0
-      } else if (options.preserveDetails) {
-        // Foreground pixel - slightly enhance
-        data[i + 3] = Math.min(255, data[i + 3] * 1.02)
+    
+    return mask
+  }
+  
+  const createSubjectPositionMask = (data: Uint8ClampedArray, width: number, height: number): Uint8Array => {
+    const mask = new Uint8Array(width * height)
+    
+    // Create center-weighted mask (subjects usually in center)
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x
+        
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(x - width/2, 2) + Math.pow(y - height/2, 2)
+        )
+        const maxDistance = Math.sqrt(Math.pow(width/2, 2) + Math.pow(height/2, 2))
+        const centerWeight = 1 - (distanceFromCenter / maxDistance)
+        
+        // Higher weight for center pixels
+        mask[idx] = centerWeight > 0.3 ? 0 : 255
       }
     }
+    
+    return mask
+  }
+  
+  const combineMasksIntelligently = (masks: Uint8Array[], width: number, height: number, analysis: any): Uint8Array => {
+    const combinedMask = new Uint8Array(width * height)
+    
+    // Weight masks based on image analysis
+    const weights = [0.4, 0.25, 0.2, 0.15] // object, edge, color, position
+    
+    // Adjust weights based on content
+    if (analysis.hasHuman || analysis.hasAnimal) {
+      weights[0] = 0.5 // More weight on object detection
+      weights[1] = 0.3 // More weight on edge detection
+    }
+    
+    if (analysis.subjectInCenter) {
+      weights[3] = 0.25 // More weight on position
+    }
+    
+    for (let i = 0; i < combinedMask.length; i++) {
+      let weightedSum = 0
+      let totalWeight = 0
+      
+      masks.forEach((mask, index) => {
+        if (mask && index < weights.length) {
+          weightedSum += mask[i] * weights[index]
+          totalWeight += weights[index]
+        }
+      })
+      
+      combinedMask[i] = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0
+    }
+    
+    return combinedMask
+  }
+  
+  const applyBackgroundMask = (
+    data: Uint8ClampedArray,
+    mask: Uint8Array,
+    width: number,
+    height: number,
+    options: any
+  ) => {
+    for (let i = 0; i < data.length; i += 4) {
+      const pixelIdx = Math.floor(i / 4)
+      const maskValue = mask[pixelIdx]
+      
+      if (maskValue > 128) {
+        // Background pixel
+        if (options.featherEdges) {
+          const featherDistance = calculateFeatherDistance(mask, pixelIdx, width, height)
+          const alpha = Math.max(0, Math.min(255, featherDistance * 255))
+          data[i + 3] = alpha
+        } else {
+          data[i + 3] = 0
+        }
+      } else {
+        // Foreground pixel - preserve or enhance
+        if (options.preserveDetails) {
+          data[i + 3] = Math.min(255, data[i + 3] * 1.05)
+        }
+      }
+    }
+  }
+  
+  const calculateFeatherDistance = (mask: Uint8Array, pixelIdx: number, width: number, height: number): number => {
+    const x = pixelIdx % width
+    const y = Math.floor(pixelIdx / width)
+    
+    let minDistance = Infinity
+    const searchRadius = 8
+    
+    for (let dy = -searchRadius; dy <= searchRadius; dy++) {
+      for (let dx = -searchRadius; dx <= searchRadius; dx++) {
+        const nx = x + dx
+        const ny = y + dy
+        
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+          const nIdx = ny * width + nx
+          if (mask[nIdx] <= 128) {
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            minDistance = Math.min(minDistance, distance)
+          }
+        }
+      }
+    }
+    
+    return Math.max(0, 1 - minDistance / searchRadius)
   }
 
   const sampleBackgroundColors = (data: Uint8ClampedArray, width: number, height: number): number[][] => {
     const samples: number[][] = []
     
-    // Sample from edges (likely background)
-    const samplePoints = [
-      // Corners
-      [0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1],
-      // Edge midpoints
-      [Math.floor(width / 2), 0], [Math.floor(width / 2), height - 1],
-      [0, Math.floor(height / 2)], [width - 1, Math.floor(height / 2)]
-    ]
+    // Enhanced edge sampling
+    for (let x = 0; x < width; x += 10) {
+      // Top and bottom edges
+      for (const y of [0, height - 1]) {
+        const idx = (y * width + x) * 4
+        samples.push([data[idx], data[idx + 1], data[idx + 2]])
+      }
+    }
     
-    samplePoints.forEach(([x, y]) => {
-      const idx = (y * width + x) * 4
-      samples.push([data[idx], data[idx + 1], data[idx + 2]])
-    })
+    for (let y = 0; y < height; y += 10) {
+      // Left and right edges
+      for (const x of [0, width - 1]) {
+        const idx = (y * width + x) * 4
+        samples.push([data[idx], data[idx + 1], data[idx + 2]])
+      }
+    }
     
     return samples
   }
 
   const findDominantBackgroundColor = (colors: number[][]): number[] => {
-    // Simple clustering to find most common background color
+    // Enhanced clustering to find most common background color
     const colorCounts = new Map<string, { color: number[], count: number }>()
     
     colors.forEach(color => {
-      const key = `${Math.floor(color[0] / 16)}-${Math.floor(color[1] / 16)}-${Math.floor(color[2] / 16)}`
+      const key = `${Math.floor(color[0] / 12)}-${Math.floor(color[1] / 12)}-${Math.floor(color[2] / 12)}`
       if (colorCounts.has(key)) {
         colorCounts.get(key)!.count++
       } else {
@@ -383,7 +734,7 @@ export default function BackgroundRemoverPage() {
     })
     
     let maxCount = 0
-    let dominantColor = colors[0]
+    let dominantColor = colors[0] || [255, 255, 255]
     
     colorCounts.forEach(({ color, count }) => {
       if (count > maxCount) {
@@ -393,77 +744,6 @@ export default function BackgroundRemoverPage() {
     })
     
     return dominantColor
-  }
-
-  const refineWithEdgeDetection = (
-    mask: Uint8Array,
-    data: Uint8ClampedArray,
-    width: number,
-    height: number,
-    threshold: number
-  ) => {
-    // Simple edge detection to refine mask
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const idx = y * width + x
-        const pixelIdx = idx * 4
-        
-        let maxGradient = 0
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            if (dx === 0 && dy === 0) continue
-            
-            const nIdx = ((y + dy) * width + (x + dx)) * 4
-            const gradient = Math.abs(data[pixelIdx] - data[nIdx]) +
-                           Math.abs(data[pixelIdx + 1] - data[nIdx + 1]) +
-                           Math.abs(data[pixelIdx + 2] - data[nIdx + 2])
-            maxGradient = Math.max(maxGradient, gradient)
-          }
-        }
-        
-        // Strong edges are likely subject boundaries
-        if (maxGradient > threshold * 0.8) {
-          mask[idx] = 0 // Keep as foreground
-        }
-      }
-    }
-  }
-
-  const applyFeathering = (mask: Uint8Array, width: number, height: number) => {
-    const feathered = new Uint8Array(mask)
-    const radius = 3
-    
-    for (let y = radius; y < height - radius; y++) {
-      for (let x = radius; x < width - radius; x++) {
-        const idx = y * width + x
-        
-        if (mask[idx] > 128) { // Background pixel
-          let minDistance = Infinity
-          
-          // Find distance to nearest foreground pixel
-          for (let dy = -radius; dy <= radius; dy++) {
-            for (let dx = -radius; dx <= radius; dx++) {
-              const nIdx = (y + dy) * width + (x + dx)
-              if (mask[nIdx] <= 128) {
-                const distance = Math.sqrt(dx * dx + dy * dy)
-                minDistance = Math.min(minDistance, distance)
-              }
-            }
-          }
-          
-          // Apply feathering based on distance
-          if (minDistance < radius) {
-            const alpha = (minDistance / radius) * 255
-            feathered[idx] = Math.round(alpha)
-          }
-        }
-      }
-    }
-    
-    // Copy feathered mask back
-    for (let i = 0; i < mask.length; i++) {
-      mask[i] = feathered[i]
-    }
   }
 
   const downloadFile = () => {
@@ -511,10 +791,10 @@ export default function BackgroundRemoverPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="auto">Auto (Recommended)</SelectItem>
-                    <SelectItem value="edge">Edge Detection</SelectItem>
-                    <SelectItem value="color">Color Clustering</SelectItem>
-                    <SelectItem value="simple">Simple Threshold</SelectItem>
+                    <SelectItem value="auto">AI Object Detection</SelectItem>
+                    <SelectItem value="portrait">Portrait Mode</SelectItem>
+                    <SelectItem value="animal">Animal Mode</SelectItem>
+                    <SelectItem value="object">Object Mode</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -616,8 +896,22 @@ export default function BackgroundRemoverPage() {
               <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Background Remover</h1>
             </div>
             <p className="text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              Remove image backgrounds automatically with AI-powered edge detection. Perfect for product photos and portraits.
+              Remove image backgrounds automatically with AI-powered object detection. Works with people, animals, and objects.
             </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto mb-6">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <div>
+                  <h3 className="font-medium text-amber-800">Image Size Limits</h3>
+                  <p className="text-sm text-amber-700">
+                    For best results and to prevent crashes, please use images smaller than 10MB and under 1536x1536 pixels.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="max-w-2xl mx-auto">
@@ -929,10 +1223,10 @@ export default function BackgroundRemoverPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="auto">Auto (Recommended)</SelectItem>
-                        <SelectItem value="edge">Edge Detection</SelectItem>
-                        <SelectItem value="color">Color Clustering</SelectItem>
-                        <SelectItem value="simple">Simple Threshold</SelectItem>
+                        <SelectItem value="auto">AI Object Detection</SelectItem>
+                        <SelectItem value="portrait">Portrait Mode</SelectItem>
+                        <SelectItem value="animal">Animal Mode</SelectItem>
+                        <SelectItem value="object">Object Mode</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

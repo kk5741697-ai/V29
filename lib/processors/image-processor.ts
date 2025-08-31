@@ -30,13 +30,18 @@ export interface ImageProcessingOptions {
 }
 
 export class ImageProcessor {
-  private static readonly MAX_SAFE_PIXELS = 2048 * 2048 // 4MP max for stability
-  private static readonly MAX_CANVAS_SIZE = 4096 // Max canvas dimension
+  private static readonly MAX_SAFE_PIXELS = 1024 * 1024 // 1MP max for stability
+  private static readonly MAX_CANVAS_SIZE = 2048 // Max canvas dimension
   
   // Enhanced memory management
   private static activeCanvases = new Set<HTMLCanvasElement>()
   
   static async resizeImage(file: File, options: ImageProcessingOptions): Promise<Blob> {
+    // Enhanced safety checks
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error("File too large. Please use an image smaller than 10MB.")
+    }
+
     return this.processImageSafely(file, (canvas, ctx, img) => {
       this.activeCanvases.add(canvas)
       const targetWidth = options.width || img.naturalWidth
@@ -69,6 +74,11 @@ export class ImageProcessor {
   }
 
   static async compressImage(file: File, options: ImageProcessingOptions): Promise<Blob> {
+    // Enhanced safety checks
+    if (file.size > 15 * 1024 * 1024) {
+      throw new Error("File too large. Please use an image smaller than 15MB.")
+    }
+
     return this.processImageSafely(file, (canvas, ctx, img) => {
       this.activeCanvases.add(canvas)
       // Calculate compression dimensions
@@ -274,12 +284,12 @@ export class ImageProcessor {
     options: ImageProcessingOptions
   ): Promise<Blob> {
     // Memory safety checks
-    if (file.size > 15 * 1024 * 1024) { // 15MB limit for stability
-      throw new Error("Image too large. Please use an image smaller than 15MB.")
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit for stability
+      throw new Error("Image too large. Please use an image smaller than 10MB.")
     }
 
-    // Check if too many canvases are active
-    if (this.activeCanvases.size > 3) {
+    // Check if too many canvases are active (prevent memory overload)
+    if (this.activeCanvases.size > 2) {
       throw new Error("Too many images being processed. Please wait for current operations to complete.")
     }
 
@@ -287,7 +297,7 @@ export class ImageProcessor {
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d", { 
         alpha: true,
-        willReadFrequently: true, // Changed for better compatibility
+        willReadFrequently: false, // Better performance
         desynchronized: true
       })
       
@@ -300,9 +310,9 @@ export class ImageProcessor {
       img.onload = () => {
         try {
           // Additional safety check for image dimensions
-          if (img.naturalWidth * img.naturalHeight > this.MAX_SAFE_PIXELS) {
-            // More conservative scaling for large images
-            const scale = Math.sqrt((this.MAX_SAFE_PIXELS * 0.8) / (img.naturalWidth * img.naturalHeight))
+          if (img.naturalWidth * img.naturalHeight > this.MAX_SAFE_PIXELS * 0.5) {
+            // Very conservative scaling for large images
+            const scale = Math.sqrt((this.MAX_SAFE_PIXELS * 0.5) / (img.naturalWidth * img.naturalHeight))
             const tempCanvas = document.createElement("canvas")
             const tempCtx = tempCanvas.getContext("2d")!
             
@@ -326,6 +336,7 @@ export class ImageProcessor {
           processor(canvas, ctx, img)
           this.finalizeCanvas(canvas, options, resolve, reject)
         } catch (error) {
+          this.activeCanvases.delete(canvas)
           reject(error)
         }
       }
@@ -346,8 +357,8 @@ export class ImageProcessor {
     let safeHeight = Math.min(targetHeight, this.MAX_CANVAS_SIZE)
     
     // Ensure we don't exceed pixel limit
-    if (safeWidth * safeHeight > this.MAX_SAFE_PIXELS) {
-      const scale = Math.sqrt(this.MAX_SAFE_PIXELS / (safeWidth * safeHeight))
+    if (safeWidth * safeHeight > this.MAX_SAFE_PIXELS * 0.8) {
+      const scale = Math.sqrt((this.MAX_SAFE_PIXELS * 0.8) / (safeWidth * safeHeight))
       safeWidth = Math.floor(safeWidth * scale)
       safeHeight = Math.floor(safeHeight * scale)
     }
@@ -404,6 +415,7 @@ export class ImageProcessor {
       
       canvas.toBlob(
         (blob) => {
+          this.activeCanvases.delete(canvas)
           if (blob) {
             resolve(blob)
           } else {
@@ -414,6 +426,7 @@ export class ImageProcessor {
         quality
       )
     } catch (error) {
+      this.activeCanvases.delete(canvas)
       reject(new Error("Failed to finalize image"))
     }
   }
@@ -459,8 +472,18 @@ if (typeof window !== "undefined") {
   
   // Periodic cleanup
   setInterval(() => {
-    if (ImageProcessor.activeCanvases.size === 0) {
+    // More frequent cleanup
       ImageProcessor.cleanupMemory()
-    }
-  }, 30000) // Every 30 seconds
+  }, 15000) // Every 15 seconds
+  
+  // Emergency cleanup on memory pressure
+  if ('memory' in performance) {
+    setInterval(() => {
+      const memInfo = (performance as any).memory
+      if (memInfo && memInfo.usedJSHeapSize > memInfo.jsHeapSizeLimit * 0.8) {
+        console.warn('High memory usage detected, cleaning up...')
+        ImageProcessor.cleanupMemory()
+      }
+    }, 5000)
+  }
 }
