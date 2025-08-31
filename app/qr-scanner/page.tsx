@@ -6,7 +6,9 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 import { QRProcessor } from "@/lib/qr-processor"
+import { AdBanner } from "@/components/ads/ad-banner"
 import { 
   ScanLine, 
   Upload, 
@@ -326,6 +328,15 @@ export default function QRScannerPage() {
               {scanResult ? (
                 <div className="space-y-4">
                   {renderFormattedData(scanResult)}
+                  
+                  {/* Canvas Ad */}
+                  <div className="my-4">
+                    <AdBanner 
+                      adSlot="qr-scanner-canvas"
+                      adFormat="auto"
+                      className="w-full"
+                    />
+                  </div>
                   
                   <Button onClick={copyData} variant="outline" className="w-full">
                     <Copy className="h-4 w-4 mr-2" />

@@ -50,7 +50,6 @@ export class QRProcessor {
         throw new Error("QR code content cannot be empty")
       }
 
-      // Validate text length for QR code capacity
       if (text.length > 2953) {
         throw new Error("Text too long for QR code. Maximum 2953 characters allowed.")
       }
@@ -72,17 +71,99 @@ export class QRProcessor {
       const qrDataURL = await QRCode.toDataURL(text, qrOptions)
 
       // Apply styling and enhancements
-      let enhancedQR = qrDataURL
-
       if (options.style || options.logo?.src) {
-        enhancedQR = await this.enhanceQRCode(qrDataURL, options)
+        return await this.enhanceQRCode(qrDataURL, options)
       }
 
-      return enhancedQR
+      return qrDataURL
     } catch (error) {
       console.error("QR generation failed:", error)
       throw new Error(`Failed to generate QR code: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
+  }
+
+  static async generateQRCodeSVG(text: string, options: QRCodeOptions = {}): Promise<string> {
+    try {
+      if (!text || text.trim() === "") {
+        throw new Error("QR code content cannot be empty")
+      }
+
+      const qrOptions = {
+        width: options.width || 1000,
+        margin: options.margin || 4,
+        color: {
+          dark: options.color?.dark || "#000000",
+          light: options.color?.light || "#FFFFFF",
+        },
+        errorCorrectionLevel: options.errorCorrectionLevel || "M",
+        maskPattern: options.maskPattern,
+        version: options.version,
+      }
+
+      let svgString = await QRCode.toString(text, { ...qrOptions, type: "svg" })
+
+      // Add logo to SVG if provided
+      if (options.logo?.src) {
+        svgString = await this.addLogoToSVG(svgString, options.logo, options.width || 1000)
+      }
+
+      return svgString
+    } catch (error) {
+      console.error("QR SVG generation failed:", error)
+      throw new Error(`Failed to generate QR SVG: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  private static async addLogoToSVG(svgString: string, logo: NonNullable<QRCodeOptions["logo"]>, qrSize: number): Promise<string> {
+    try {
+      // Convert logo to base64 if it's a URL
+      let logoBase64 = logo.src
+      
+      if (logo.src.startsWith('http') || logo.src.startsWith('blob:')) {
+        logoBase64 = await this.convertImageToBase64(logo.src)
+      }
+
+      const logoSize = logo.width || qrSize * 0.2
+      const logoX = logo.x !== undefined ? logo.x : (qrSize - logoSize) / 2
+      const logoY = logo.y !== undefined ? logo.y : (qrSize - logoSize) / 2
+
+      // Insert logo into SVG
+      const logoElement = `
+        <g>
+          <rect x="${logoX - 10}" y="${logoY - 10}" width="${logoSize + 20}" height="${logoSize + 20}" 
+                fill="white" rx="10" ry="10" stroke="#e5e7eb" stroke-width="2"/>
+          <image x="${logoX}" y="${logoY}" width="${logoSize}" height="${logoSize}" 
+                 href="${logoBase64}" preserveAspectRatio="xMidYMid meet"/>
+        </g>
+      `
+
+      // Insert before closing </svg> tag
+      return svgString.replace('</svg>', logoElement + '</svg>')
+    } catch (error) {
+      console.warn("Failed to add logo to SVG:", error)
+      return svgString
+    }
+  }
+
+  private static async convertImageToBase64(src: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        const ctx = canvas.getContext("2d")!
+        
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        ctx.drawImage(img, 0, 0)
+        
+        resolve(canvas.toDataURL("image/png"))
+      }
+      
+      img.onerror = () => reject(new Error("Failed to load image"))
+      img.src = src
+    })
   }
 
   private static async enhanceQRCode(qrDataURL: string, options: QRCodeOptions): Promise<string> {
@@ -104,9 +185,9 @@ export class QRProcessor {
           // Draw base QR code
           ctx.drawImage(img, 0, 0, size, size)
 
-          // Apply styling
+          // Apply real styling that maintains QR readability
           if (options.style) {
-            await this.applyQRStyling(ctx, canvas, options.style, size)
+            await this.applyReadableQRStyling(ctx, canvas, options.style, size)
           }
 
           // Add logo if provided
@@ -117,7 +198,7 @@ export class QRProcessor {
           resolve(canvas.toDataURL("image/png"))
         } catch (error) {
           console.error("QR enhancement failed:", error)
-          resolve(qrDataURL) // Return original on error
+          resolve(qrDataURL)
         }
       }
       img.onerror = () => resolve(qrDataURL)
@@ -125,242 +206,47 @@ export class QRProcessor {
     })
   }
 
-  private static async applyQRStyling(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, style: any, size: number): Promise<void> {
+  private static async applyReadableQRStyling(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, style: any, size: number): Promise<void> {
+    // Only apply subtle styling that maintains QR code readability
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
     const data = imageData.data
-    const moduleSize = Math.floor(size / 25) // Approximate QR module size
 
-    // Apply different styles based on configuration
-    if (style.shape === "rounded" || style.corners === "rounded") {
-      this.applyRoundedStyle(data, canvas.width, canvas.height, moduleSize)
-    }
-
-    if (style.shape === "dots" || style.dots === "dots") {
-      this.applyDotStyle(data, canvas.width, canvas.height, moduleSize)
-    }
-
-    if (style.shape === "extra-rounded") {
-      this.applyExtraRoundedStyle(data, canvas.width, canvas.height, moduleSize)
-    }
-
-    // Apply eye styling
-    if (style.eyes && style.eyes !== "square") {
-      this.applyEyeStyling(ctx, canvas, style.eyes, style.eyeColor || "#000000", size)
+    // Apply minimal styling to maintain scannability
+    if (style.shape === "rounded") {
+      this.applySubtleRounding(data, canvas.width, canvas.height, size)
     }
 
     ctx.putImageData(imageData, 0, 0)
   }
 
-  private static applyRoundedStyle(data: Uint8ClampedArray, width: number, height: number, moduleSize: number): void {
-    const cornerRadius = moduleSize * 0.3
+  private static applySubtleRounding(data: Uint8ClampedArray, width: number, height: number, qrSize: number): void {
+    // Apply very subtle rounding that doesn't break QR readability
+    const moduleSize = Math.floor(qrSize / 25)
+    const cornerRadius = Math.max(1, moduleSize * 0.15) // Very small radius
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const index = (y * width + x) * 4
         
         if (data[index] === 0) { // Dark pixel
-          const moduleX = Math.floor(x / moduleSize)
-          const moduleY = Math.floor(y / moduleSize)
           const pixelInModuleX = x % moduleSize
           const pixelInModuleY = y % moduleSize
           
-          // Check if pixel is in corner area
-          const distanceFromCorner = Math.min(
-            Math.sqrt(pixelInModuleX * pixelInModuleX + pixelInModuleY * pixelInModuleY),
-            Math.sqrt((moduleSize - pixelInModuleX) * (moduleSize - pixelInModuleX) + pixelInModuleY * pixelInModuleY),
-            Math.sqrt(pixelInModuleX * pixelInModuleX + (moduleSize - pixelInModuleY) * (moduleSize - pixelInModuleY)),
-            Math.sqrt((moduleSize - pixelInModuleX) * (moduleSize - pixelInModuleX) + (moduleSize - pixelInModuleY) * (moduleSize - pixelInModuleY))
-          )
+          // Only round corners very slightly
+          const isCorner = (pixelInModuleX < cornerRadius && pixelInModuleY < cornerRadius) ||
+                          (pixelInModuleX >= moduleSize - cornerRadius && pixelInModuleY < cornerRadius) ||
+                          (pixelInModuleX < cornerRadius && pixelInModuleY >= moduleSize - cornerRadius) ||
+                          (pixelInModuleX >= moduleSize - cornerRadius && pixelInModuleY >= moduleSize - cornerRadius)
           
-          if (distanceFromCorner > cornerRadius) {
-            // Make corner pixels white for rounded effect
-            data[index] = 255     // R
-            data[index + 1] = 255 // G
-            data[index + 2] = 255 // B
+          if (isCorner) {
+            // Make corner pixels slightly gray instead of white to maintain readability
+            data[index] = 64     // R
+            data[index + 1] = 64 // G
+            data[index + 2] = 64 // B
           }
         }
       }
     }
-  }
-
-  private static applyDotStyle(data: Uint8ClampedArray, width: number, height: number, moduleSize: number): void {
-    const radius = moduleSize * 0.4
-
-    for (let y = 0; y < height; y += moduleSize) {
-      for (let x = 0; x < width; x += moduleSize) {
-        const centerX = x + moduleSize / 2
-        const centerY = y + moduleSize / 2
-        
-        // Check if this module should be dark
-        const centerIndex = (Math.floor(centerY) * width + Math.floor(centerX)) * 4
-        if (centerIndex < data.length && data[centerIndex] === 0) {
-          // Clear the module area first
-          for (let dy = 0; dy < moduleSize; dy++) {
-            for (let dx = 0; dx < moduleSize; dx++) {
-              const pixelX = x + dx
-              const pixelY = y + dy
-              if (pixelX < width && pixelY < height) {
-                const index = (pixelY * width + pixelX) * 4
-                data[index] = 255     // R
-                data[index + 1] = 255 // G
-                data[index + 2] = 255 // B
-              }
-            }
-          }
-          
-          // Draw circle
-          for (let dy = -radius; dy <= radius; dy++) {
-            for (let dx = -radius; dx <= radius; dx++) {
-              const distance = Math.sqrt(dx * dx + dy * dy)
-              if (distance <= radius) {
-                const pixelX = Math.floor(centerX + dx)
-                const pixelY = Math.floor(centerY + dy)
-                
-                if (pixelX >= 0 && pixelX < width && pixelY >= 0 && pixelY < height) {
-                  const index = (pixelY * width + pixelX) * 4
-                  data[index] = 0       // R
-                  data[index + 1] = 0   // G
-                  data[index + 2] = 0   // B
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  private static applyExtraRoundedStyle(data: Uint8ClampedArray, width: number, height: number, moduleSize: number): void {
-    const cornerRadius = moduleSize * 0.5
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const index = (y * width + x) * 4
-        
-        if (data[index] === 0) { // Dark pixel
-          const moduleX = Math.floor(x / moduleSize)
-          const moduleY = Math.floor(y / moduleSize)
-          const pixelInModuleX = x % moduleSize
-          const pixelInModuleY = y % moduleSize
-          
-          // Calculate distance from module center
-          const centerX = moduleSize / 2
-          const centerY = moduleSize / 2
-          const distanceFromCenter = Math.sqrt(
-            (pixelInModuleX - centerX) * (pixelInModuleX - centerX) + 
-            (pixelInModuleY - centerY) * (pixelInModuleY - centerY)
-          )
-          
-          if (distanceFromCenter > cornerRadius) {
-            // Make pixels outside radius white
-            data[index] = 255     // R
-            data[index + 1] = 255 // G
-            data[index + 2] = 255 // B
-          }
-        }
-      }
-    }
-  }
-
-  private static applyEyeStyling(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, eyeStyle: string, eyeColor: string, size: number): void {
-    const moduleSize = size / 25
-    const eyeSize = moduleSize * 7
-    
-    // Eye positions (top-left, top-right, bottom-left)
-    const eyePositions = [
-      { x: moduleSize, y: moduleSize },
-      { x: size - eyeSize - moduleSize, y: moduleSize },
-      { x: moduleSize, y: size - eyeSize - moduleSize }
-    ]
-
-    eyePositions.forEach(pos => {
-      ctx.save()
-      
-      // Clear existing eye area
-      ctx.fillStyle = "#FFFFFF"
-      ctx.fillRect(pos.x, pos.y, eyeSize, eyeSize)
-      
-      ctx.fillStyle = eyeColor
-      
-      switch (eyeStyle) {
-        case "circle":
-          // Outer circle
-          ctx.beginPath()
-          ctx.arc(pos.x + eyeSize/2, pos.y + eyeSize/2, eyeSize/2 - moduleSize/2, 0, 2 * Math.PI)
-          ctx.fill()
-          
-          // Inner white circle
-          ctx.fillStyle = "#FFFFFF"
-          ctx.beginPath()
-          ctx.arc(pos.x + eyeSize/2, pos.y + eyeSize/2, eyeSize/2 - moduleSize*1.5, 0, 2 * Math.PI)
-          ctx.fill()
-          
-          // Center dot
-          ctx.fillStyle = eyeColor
-          ctx.beginPath()
-          ctx.arc(pos.x + eyeSize/2, pos.y + eyeSize/2, moduleSize*1.5, 0, 2 * Math.PI)
-          ctx.fill()
-          break
-          
-        case "rounded":
-          // Rounded square outer
-          this.drawRoundedRect(ctx, pos.x + moduleSize/2, pos.y + moduleSize/2, eyeSize - moduleSize, eyeSize - moduleSize, moduleSize/2)
-          ctx.fill()
-          
-          // Inner white rounded square
-          ctx.fillStyle = "#FFFFFF"
-          this.drawRoundedRect(ctx, pos.x + moduleSize*1.5, pos.y + moduleSize*1.5, eyeSize - moduleSize*3, eyeSize - moduleSize*3, moduleSize/3)
-          ctx.fill()
-          
-          // Center rounded square
-          ctx.fillStyle = eyeColor
-          this.drawRoundedRect(ctx, pos.x + moduleSize*2.5, pos.y + moduleSize*2.5, eyeSize - moduleSize*5, eyeSize - moduleSize*5, moduleSize/4)
-          ctx.fill()
-          break
-          
-        case "leaf":
-          // Leaf-shaped eye
-          ctx.beginPath()
-          ctx.moveTo(pos.x + eyeSize/2, pos.y + moduleSize/2)
-          ctx.quadraticCurveTo(pos.x + eyeSize - moduleSize/2, pos.y + eyeSize/2, pos.x + eyeSize/2, pos.y + eyeSize - moduleSize/2)
-          ctx.quadraticCurveTo(pos.x + moduleSize/2, pos.y + eyeSize/2, pos.x + eyeSize/2, pos.y + moduleSize/2)
-          ctx.fill()
-          
-          // Inner white area
-          ctx.fillStyle = "#FFFFFF"
-          ctx.beginPath()
-          ctx.moveTo(pos.x + eyeSize/2, pos.y + moduleSize*1.5)
-          ctx.quadraticCurveTo(pos.x + eyeSize - moduleSize*1.5, pos.y + eyeSize/2, pos.x + eyeSize/2, pos.y + eyeSize - moduleSize*1.5)
-          ctx.quadraticCurveTo(pos.x + moduleSize*1.5, pos.y + eyeSize/2, pos.x + eyeSize/2, pos.y + moduleSize*1.5)
-          ctx.fill()
-          
-          // Center dot
-          ctx.fillStyle = eyeColor
-          ctx.beginPath()
-          ctx.arc(pos.x + eyeSize/2, pos.y + eyeSize/2, moduleSize, 0, 2 * Math.PI)
-          ctx.fill()
-          break
-          
-        default: // square - keep original
-          break
-      }
-      
-      ctx.restore()
-    })
-  }
-
-  private static drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
-    ctx.beginPath()
-    ctx.moveTo(x + radius, y)
-    ctx.lineTo(x + width - radius, y)
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
-    ctx.lineTo(x + width, y + height - radius)
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
-    ctx.lineTo(x + radius, y + height)
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
-    ctx.lineTo(x, y + radius)
-    ctx.quadraticCurveTo(x, y, x + radius, y)
-    ctx.closePath()
   }
 
   private static async addLogoToCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, logo: NonNullable<QRCodeOptions["logo"]>): Promise<void> {
@@ -370,32 +256,24 @@ export class QRProcessor {
       logoImage.onload = () => {
         try {
           const size = canvas.width
-          const logoSize = logo.width || size * 0.2
+          const logoSize = Math.min(logo.width || size * 0.15, size * 0.2) // Smaller logo for better scanning
           const logoX = logo.x !== undefined ? logo.x : (size - logoSize) / 2
           const logoY = logo.y !== undefined ? logo.y : (size - logoSize) / 2
 
-          // Enhanced logo background with better styling
+          // White background with border
           const padding = logoSize * 0.1
           const borderRadius = logoSize * 0.1
           
-          // White background with shadow
           ctx.save()
           ctx.fillStyle = "#FFFFFF"
-          ctx.shadowColor = "rgba(0, 0, 0, 0.2)"
-          ctx.shadowBlur = 8
-          ctx.shadowOffsetX = 0
-          ctx.shadowOffsetY = 2
+          ctx.strokeStyle = "#E5E7EB"
+          ctx.lineWidth = 2
           
           this.drawRoundedRect(ctx, logoX - padding, logoY - padding, logoSize + padding * 2, logoSize + padding * 2, borderRadius)
           ctx.fill()
+          ctx.stroke()
           
-          // Reset shadow
-          ctx.shadowColor = "transparent"
-          ctx.shadowBlur = 0
-          ctx.shadowOffsetX = 0
-          ctx.shadowOffsetY = 0
-
-          // Draw logo with rounded corners
+          // Draw logo
           ctx.beginPath()
           this.drawRoundedRect(ctx, logoX, logoY, logoSize, logoSize, borderRadius / 2)
           ctx.clip()
@@ -413,37 +291,25 @@ export class QRProcessor {
     })
   }
 
-  static async generateQRCodeSVG(text: string, options: QRCodeOptions = {}): Promise<string> {
-    try {
-      if (!text || text.trim() === "") {
-        throw new Error("QR code content cannot be empty")
-      }
-
-      const qrOptions = {
-        width: options.width || 1000,
-        margin: options.margin || 4,
-        color: {
-          dark: options.color?.dark || "#000000",
-          light: options.color?.light || "#FFFFFF",
-        },
-        errorCorrectionLevel: options.errorCorrectionLevel || "M",
-        maskPattern: options.maskPattern,
-        version: options.version,
-      }
-
-      return await QRCode.toString(text, { ...qrOptions, type: "svg" })
-    } catch (error) {
-      console.error("QR SVG generation failed:", error)
-      throw new Error(`Failed to generate QR SVG: ${error instanceof Error ? error.message : "Unknown error"}`)
-    }
+  private static drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
+    ctx.beginPath()
+    ctx.moveTo(x + radius, y)
+    ctx.lineTo(x + width - radius, y)
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+    ctx.lineTo(x + width, y + height - radius)
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+    ctx.lineTo(x + radius, y + height)
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+    ctx.lineTo(x, y + radius)
+    ctx.quadraticCurveTo(x, y, x + radius, y)
+    ctx.closePath()
   }
 
   static async scanQRCode(imageFile: File): Promise<QRScanResult> {
     try {
-      // Enhanced QR scanning simulation with more realistic behavior
+      // Enhanced QR scanning simulation
       await new Promise(resolve => setTimeout(resolve, 1500))
       
-      // Generate more realistic mock data based on common QR code types
       const mockDataTypes = [
         "https://pixoratools.com",
         "https://github.com/pixoratools",
@@ -456,7 +322,6 @@ export class QRProcessor {
         "geo:37.7749,-122.4194"
       ]
       
-      // Select random data type
       const selectedData = mockDataTypes[Math.floor(Math.random() * mockDataTypes.length)]
       
       return {

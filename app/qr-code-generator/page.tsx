@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   QrCode,
   Download,
@@ -45,9 +46,13 @@ import {
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { AdBanner } from "@/components/ads/ad-banner"
+import { useSearchParams } from "next/navigation"
 
 export default function QRCodeGeneratorPage() {
-  const [activeType, setActiveType] = useState("url")
+  const searchParams = useSearchParams()
+  const initialType = searchParams.get('type') || "url"
+  
+  const [activeType, setActiveType] = useState(initialType)
   const [content, setContent] = useState("https://example.com")
   const [qrSize, setQrSize] = useState([1000])
   const [errorCorrection, setErrorCorrection] = useState("M")
@@ -60,6 +65,7 @@ export default function QRCodeGeneratorPage() {
   const [cornerStyle, setCornerStyle] = useState("square")
   const [dotStyle, setDotStyle] = useState("square")
   const [qrDataUrl, setQrDataUrl] = useState("")
+  const [qrSvgString, setQrSvgString] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(100)
   const [frameEnabled, setFrameEnabled] = useState(false)
@@ -70,6 +76,7 @@ export default function QRCodeGeneratorPage() {
   const [gradientColor2, setGradientColor2] = useState("#333333")
   const [eyeStyle, setEyeStyle] = useState("square")
   const [eyeColor, setEyeColor] = useState("#000000")
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   
   // Content type specific fields
   const [emailData, setEmailData] = useState({ email: "", subject: "", body: "" })
@@ -102,6 +109,8 @@ export default function QRCodeGeneratorPage() {
     { id: "rounded", label: "Rounded", icon: Circle },
     { id: "dots", label: "Dots", icon: Circle },
     { id: "extra-rounded", label: "Extra Rounded", icon: Hexagon },
+    { id: "classy", label: "Classy", icon: Star },
+    { id: "classy-rounded", label: "Classy Rounded", icon: Star },
   ]
 
   const eyeStyleOptions = [
@@ -109,7 +118,40 @@ export default function QRCodeGeneratorPage() {
     { id: "circle", label: "Circle", icon: Circle },
     { id: "rounded", label: "Rounded", icon: Hexagon },
     { id: "leaf", label: "Leaf", icon: Star },
+    { id: "extra-rounded", label: "Extra Rounded", icon: Circle },
   ]
+
+  // Set initial content based on type
+  useEffect(() => {
+    switch (activeType) {
+      case "email":
+        setContent("mailto:contact@example.com")
+        break
+      case "phone":
+        setContent("tel:+1234567890")
+        break
+      case "sms":
+        setContent("sms:+1234567890?body=Hello")
+        break
+      case "wifi":
+        setContent("WIFI:T:WPA;S:MyNetwork;P:password123;H:false;;")
+        break
+      case "vcard":
+        setContent("BEGIN:VCARD\nVERSION:3.0\nFN:John Doe\nEND:VCARD")
+        break
+      case "event":
+        setContent("BEGIN:VEVENT\nSUMMARY:Meeting\nEND:VEVENT")
+        break
+      case "location":
+        setContent("geo:40.7128,-74.0060")
+        break
+      case "text":
+        setContent("Hello, World!")
+        break
+      default:
+        setContent("https://example.com")
+    }
+  }, [activeType])
 
   const generateQRContent = () => {
     try {
@@ -162,7 +204,6 @@ export default function QRCodeGeneratorPage() {
 
       setIsGenerating(true)
 
-      // Enhanced QR generation with proper styling
       const logoSrc = logoFile ? URL.createObjectURL(logoFile) : logoUrl
       const qrOptions = {
         width: qrSize[0],
@@ -191,8 +232,14 @@ export default function QRCodeGeneratorPage() {
         } : undefined,
       }
 
-      const qrDataURL = await QRProcessor.generateQRCode(qrContent, qrOptions)
+      // Generate both PNG and SVG
+      const [qrDataURL, qrSVG] = await Promise.all([
+        QRProcessor.generateQRCode(qrContent, qrOptions),
+        QRProcessor.generateQRCodeSVG(qrContent, { ...qrOptions, logo: logoSrc ? { src: logoSrc, width: qrSize[0] * 0.2 } : undefined })
+      ])
+      
       setQrDataUrl(qrDataURL)
+      setQrSvgString(qrSVG)
 
       toast({
         title: "QR Code generated",
@@ -202,6 +249,7 @@ export default function QRCodeGeneratorPage() {
     } catch (error) {
       console.error("Failed to generate QR code:", error)
       setQrDataUrl("")
+      setQrSvgString("")
       toast({
         title: "QR Generation Failed",
         description: error instanceof Error ? error.message : "Please check your input and try again",
@@ -235,23 +283,16 @@ export default function QRCodeGeneratorPage() {
   const downloadQR = async (format: string) => {
     try {
       if (format === "svg") {
-        const qrContent = generateQRContent()
-        if (!qrContent.trim()) {
+        if (!qrSvgString) {
           toast({
-            title: "No content to generate QR code",
-            description: "Please enter content first",
+            title: "No SVG QR code available",
+            description: "Please generate a QR code first",
             variant: "destructive"
           })
           return
         }
-
-        const qrOptions = {
-          width: qrSize[0],
-          color: { dark: foregroundColor, light: backgroundColor },
-          errorCorrectionLevel: errorCorrection as "L" | "M" | "Q" | "H"
-        }
-        const svgString = await QRProcessor.generateQRCodeSVG(qrContent, qrOptions)
-        const blob = new Blob([svgString], { type: "image/svg+xml" })
+        
+        const blob = new Blob([qrSvgString], { type: "image/svg+xml" })
         const url = URL.createObjectURL(blob)
         const link = document.createElement("a")
         link.download = "qr-code.svg"
@@ -268,7 +309,6 @@ export default function QRCodeGeneratorPage() {
           return
         }
         
-        // Convert canvas to blob for better download
         const canvas = document.createElement("canvas")
         const ctx = canvas.getContext("2d")!
         const img = new Image()
@@ -638,20 +678,381 @@ export default function QRCodeGeneratorPage() {
     }
   }
 
+  // Mobile Sidebar Component
+  const MobileSidebar = () => (
+    <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+      <SheetContent side="bottom" className="h-[80vh] p-0">
+        <SheetHeader className="px-6 py-4 border-b bg-gray-50">
+          <SheetTitle className="flex items-center space-x-2">
+            <QrCode className="h-5 w-5 text-green-600" />
+            <span>QR Settings</span>
+          </SheetTitle>
+        </SheetHeader>
+        
+        <ScrollArea className="h-full">
+          <div className="p-6 space-y-6">
+            {/* Content Input */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="h-px bg-gray-200 flex-1"></div>
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Content</Label>
+                <div className="h-px bg-gray-200 flex-1"></div>
+              </div>
+              {renderContentForm()}
+            </div>
+
+            {/* Design Style */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="h-px bg-gray-200 flex-1"></div>
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Design</Label>
+                <div className="h-px bg-gray-200 flex-1"></div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">QR Style</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {styleOptions.map((style) => (
+                    <Button
+                      key={style.id}
+                      variant={qrStyle === style.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setQrStyle(style.id)}
+                      className="flex items-center space-x-2 text-xs h-10"
+                    >
+                      <style.icon className="h-4 w-4" />
+                      <span>{style.label}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Eye Style</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {eyeStyleOptions.map((style) => (
+                    <Button
+                      key={style.id}
+                      variant={eyeStyle === style.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setEyeStyle(style.id)}
+                      className="flex items-center space-x-2 text-xs h-10"
+                    >
+                      <style.icon className="h-4 w-4" />
+                      <span>{style.label}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Colors */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="h-px bg-gray-200 flex-1"></div>
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Colors</Label>
+                <div className="h-px bg-gray-200 flex-1"></div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="gradient-enabled"
+                  checked={gradientEnabled}
+                  onCheckedChange={setGradientEnabled}
+                />
+                <Label htmlFor="gradient-enabled" className="text-sm">Enable Gradient</Label>
+              </div>
+
+              {gradientEnabled ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Gradient Start</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <input
+                        type="color"
+                        value={gradientColor1}
+                        onChange={(e) => setGradientColor1(e.target.value)}
+                        className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <Input
+                        value={gradientColor1}
+                        onChange={(e) => setGradientColor1(e.target.value)}
+                        className="flex-1 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Gradient End</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <input
+                        type="color"
+                        value={gradientColor2}
+                        onChange={(e) => setGradientColor2(e.target.value)}
+                        className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <Input
+                        value={gradientColor2}
+                        onChange={(e) => setGradientColor2(e.target.value)}
+                        className="flex-1 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Foreground</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <input
+                        type="color"
+                        value={foregroundColor}
+                        onChange={(e) => setForegroundColor(e.target.value)}
+                        className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <Input
+                        value={foregroundColor}
+                        onChange={(e) => setForegroundColor(e.target.value)}
+                        className="flex-1 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Background</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <input
+                        type="color"
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <Input
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        className="flex-1 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label className="text-sm font-medium">Eye Color</Label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <input
+                    type="color"
+                    value={eyeColor}
+                    onChange={(e) => setEyeColor(e.target.value)}
+                    className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={eyeColor}
+                    onChange={(e) => setEyeColor(e.target.value)}
+                    className="flex-1 font-mono text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Logo */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="h-px bg-gray-200 flex-1"></div>
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Logo</Label>
+                <div className="h-px bg-gray-200 flex-1"></div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Upload Logo</Label>
+                <div className="mt-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                  />
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-500">Or</span>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Logo URL</Label>
+                <Input
+                  type="url"
+                  value={logoUrl}
+                  onChange={(e) => {
+                    setLogoUrl(e.target.value)
+                    if (e.target.value) {
+                      setLogoFile(null)
+                      setLogoPreview("")
+                    }
+                  }}
+                  placeholder="https://example.com/logo.png"
+                  className="mt-1"
+                  disabled={!!logoFile}
+                />
+              </div>
+              
+              {(logoPreview || logoUrl) && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Logo Preview</Label>
+                  <div className="relative inline-block">
+                    <img
+                      src={logoPreview || logoUrl}
+                      alt="Logo preview"
+                      className="w-16 h-16 object-contain border border-gray-300 rounded-lg bg-white"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full"
+                      onClick={clearLogo}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Advanced Options */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="h-px bg-gray-200 flex-1"></div>
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Advanced</Label>
+                <div className="h-px bg-gray-200 flex-1"></div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Error Correction</Label>
+                <Select value={errorCorrection} onValueChange={setErrorCorrection}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="L">Low (7%)</SelectItem>
+                    <SelectItem value="M">Medium (15%)</SelectItem>
+                    <SelectItem value="Q">Quartile (25%)</SelectItem>
+                    <SelectItem value="H">High (30%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <Label className="text-sm font-medium">Size</Label>
+                  <Badge variant="outline" className="text-xs">
+                    {qrSize[0]} × {qrSize[0]} px
+                  </Badge>
+                </div>
+                <Slider
+                  value={qrSize}
+                  onValueChange={setQrSize}
+                  max={2000}
+                  min={200}
+                  step={100}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>200px</span>
+                  <span>2000px</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+        
+        {/* Mobile Footer */}
+        <div className="p-4 border-t bg-white space-y-3">
+          <Button 
+            onClick={() => {
+              generateQR()
+              setIsMobileSidebarOpen(false)
+            }}
+            disabled={isGenerating || !generateQRContent().trim()}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-semibold"
+            size="lg"
+          >
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <QrCode className="h-4 w-4 mr-2" />
+                Generate QR Code
+              </>
+            )}
+          </Button>
+
+          {qrDataUrl && (
+            <div className="space-y-2">
+              <Button 
+                onClick={() => {
+                  downloadQR("png")
+                  setIsMobileSidebarOpen(false)
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-semibold"
+                size="lg"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download PNG
+              </Button>
+
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    downloadQR("svg")
+                    setIsMobileSidebarOpen(false)
+                  }}
+                  className="text-blue-600 border-blue-400 hover:bg-blue-50"
+                >
+                  SVG
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    downloadQR("jpeg")
+                    setIsMobileSidebarOpen(false)
+                  }}
+                  className="text-orange-600 border-orange-400 hover:bg-orange-50"
+                >
+                  JPEG
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    downloadQR("webp")
+                    setIsMobileSidebarOpen(false)
+                  }}
+                  className="text-purple-600 border-purple-400 hover:bg-purple-50"
+                >
+                  WebP
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-2">
-          <AdBanner 
-            adSlot="tool-header-banner"
-            adFormat="auto"
-            className="max-w-6xl mx-auto"
-            mobileOptimized={true}
-          />
-        </div>
-      </div>
 
       {/* Mobile Layout */}
       <div className="lg:hidden">
@@ -660,7 +1061,16 @@ export default function QRCodeGeneratorPage() {
             <QrCode className="h-5 w-5 text-green-600" />
             <h1 className="text-lg font-semibold text-gray-900">QR Generator</h1>
           </div>
-          <Badge variant="secondary">{activeType.toUpperCase()}</Badge>
+          <div className="flex items-center space-x-2">
+            <Badge variant="secondary">{activeType.toUpperCase()}</Badge>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Content Type Tabs */}
@@ -686,16 +1096,6 @@ export default function QRCodeGeneratorPage() {
         </div>
 
         <div className="p-4 space-y-6">
-          {/* Content Input */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Content</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderContentForm()}
-            </CardContent>
-          </Card>
-
           {/* QR Preview */}
           <Card>
             <CardHeader>
@@ -710,6 +1110,17 @@ export default function QRCodeGeneratorPage() {
                     className="mx-auto max-w-full border rounded-lg shadow-md"
                     style={{ maxWidth: "250px" }}
                   />
+                  
+                  {/* Canvas Ad */}
+                  <div className="my-4">
+                    <AdBanner 
+                      adSlot="qr-mobile-canvas"
+                      adFormat="auto"
+                      className="w-full"
+                      mobileOptimized={true}
+                    />
+                  </div>
+                  
                   <div className="grid grid-cols-2 gap-2">
                     <Button onClick={() => downloadQR("png")} className="bg-green-600 hover:bg-green-700">
                       <Download className="h-4 w-4 mr-2" />
@@ -728,14 +1139,6 @@ export default function QRCodeGeneratorPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Mobile Ad */}
-          <AdBanner 
-            adSlot="mobile-qr-content"
-            adFormat="auto"
-            className="w-full"
-            mobileOptimized={true}
-          />
 
           {/* Generate Button */}
           <Button 
@@ -757,6 +1160,8 @@ export default function QRCodeGeneratorPage() {
             )}
           </Button>
         </div>
+
+        <MobileSidebar />
       </div>
 
       {/* Desktop Layout */}
@@ -778,6 +1183,7 @@ export default function QRCodeGeneratorPage() {
                 onClick={() => {
                   setContent("")
                   setQrDataUrl("")
+                  setQrSvgString("")
                   setLogoFile(null)
                   setLogoUrl("")
                   setLogoPreview("")
@@ -856,6 +1262,15 @@ export default function QRCodeGeneratorPage() {
                     transition: "transform 0.2s ease"
                   }}
                 />
+                
+                {/* Canvas Ad */}
+                <div className="absolute bottom-4 left-4 right-4">
+                  <AdBanner 
+                    adSlot="qr-canvas-content"
+                    adFormat="auto"
+                    className="w-full"
+                  />
+                </div>
                 
                 <div className="absolute bottom-4 left-4 bg-black/70 text-white text-xs px-3 py-2 rounded-lg">
                   <div className="flex items-center space-x-4">
