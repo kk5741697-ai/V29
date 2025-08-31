@@ -33,8 +33,12 @@ export class ImageProcessor {
   private static readonly MAX_SAFE_PIXELS = 2048 * 2048 // 4MP max for stability
   private static readonly MAX_CANVAS_SIZE = 4096 // Max canvas dimension
   
+  // Enhanced memory management
+  private static activeCanvases = new Set<HTMLCanvasElement>()
+  
   static async resizeImage(file: File, options: ImageProcessingOptions): Promise<Blob> {
     return this.processImageSafely(file, (canvas, ctx, img) => {
+      this.activeCanvases.add(canvas)
       const targetWidth = options.width || img.naturalWidth
       const targetHeight = options.height || img.naturalHeight
       
@@ -59,11 +63,14 @@ export class ImageProcessor {
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = "high"
       ctx.drawImage(img, 0, 0, safeWidth, safeHeight)
+      
+      this.activeCanvases.delete(canvas)
     }, options)
   }
 
   static async compressImage(file: File, options: ImageProcessingOptions): Promise<Blob> {
     return this.processImageSafely(file, (canvas, ctx, img) => {
+      this.activeCanvases.add(canvas)
       // Calculate compression dimensions
       let { width, height } = this.getOptimalCompressionSize(
         img.naturalWidth, 
@@ -77,11 +84,14 @@ export class ImageProcessor {
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = "medium" // Balance quality vs performance
       ctx.drawImage(img, 0, 0, width, height)
+      
+      this.activeCanvases.delete(canvas)
     }, options)
   }
 
   static async convertFormat(file: File, format: "jpeg" | "png" | "webp", options: ImageProcessingOptions = {}): Promise<Blob> {
     return this.processImageSafely(file, (canvas, ctx, img) => {
+      this.activeCanvases.add(canvas)
       canvas.width = img.naturalWidth
       canvas.height = img.naturalHeight
       
@@ -94,11 +104,14 @@ export class ImageProcessor {
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = "high"
       ctx.drawImage(img, 0, 0)
+      
+      this.activeCanvases.delete(canvas)
     }, { ...options, outputFormat: format })
   }
 
   static async cropImage(file: File, cropArea: any, options: ImageProcessingOptions): Promise<Blob> {
     return this.processImageSafely(file, (canvas, ctx, img) => {
+      this.activeCanvases.add(canvas)
       const { x, y, width, height } = cropArea
       
       // Convert percentage to pixels
@@ -120,11 +133,14 @@ export class ImageProcessor {
         sourceX, sourceY, sourceWidth, sourceHeight,
         0, 0, safeWidth, safeHeight
       )
+      
+      this.activeCanvases.delete(canvas)
     }, options)
   }
 
   static async rotateImage(file: File, options: ImageProcessingOptions): Promise<Blob> {
     return this.processImageSafely(file, (canvas, ctx, img) => {
+      this.activeCanvases.add(canvas)
       const angle = (options.customRotation || 0) * Math.PI / 180
       
       // Calculate rotated dimensions
@@ -144,11 +160,14 @@ export class ImageProcessor {
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = "high"
       ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
+      
+      this.activeCanvases.delete(canvas)
     }, options)
   }
 
   static async applyFilters(file: File, options: ImageProcessingOptions): Promise<Blob> {
     return this.processImageSafely(file, (canvas, ctx, img) => {
+      this.activeCanvases.add(canvas)
       canvas.width = img.naturalWidth
       canvas.height = img.naturalHeight
       
@@ -182,11 +201,14 @@ export class ImageProcessor {
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = "high"
       ctx.drawImage(img, 0, 0)
+      
+      this.activeCanvases.delete(canvas)
     }, options)
   }
 
   static async addWatermark(file: File, watermarkText: string, options: ImageProcessingOptions): Promise<Blob> {
     return this.processImageSafely(file, (canvas, ctx, img) => {
+      this.activeCanvases.add(canvas)
       canvas.width = img.naturalWidth
       canvas.height = img.naturalHeight
       
@@ -240,6 +262,8 @@ export class ImageProcessor {
         ctx.fillText(watermarkText, x, y)
         ctx.restore()
       }
+      
+      this.activeCanvases.delete(canvas)
     }, options)
   }
 
@@ -250,15 +274,20 @@ export class ImageProcessor {
     options: ImageProcessingOptions
   ): Promise<Blob> {
     // Memory safety checks
-    if (file.size > 25 * 1024 * 1024) { // 25MB limit
-      throw new Error("Image too large. Please use an image smaller than 25MB.")
+    if (file.size > 15 * 1024 * 1024) { // 15MB limit for stability
+      throw new Error("Image too large. Please use an image smaller than 15MB.")
+    }
+
+    // Check if too many canvases are active
+    if (this.activeCanvases.size > 3) {
+      throw new Error("Too many images being processed. Please wait for current operations to complete.")
     }
 
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d", { 
         alpha: true,
-        willReadFrequently: false,
+        willReadFrequently: true, // Changed for better compatibility
         desynchronized: true
       })
       
@@ -272,7 +301,8 @@ export class ImageProcessor {
         try {
           // Additional safety check for image dimensions
           if (img.naturalWidth * img.naturalHeight > this.MAX_SAFE_PIXELS) {
-            const scale = Math.sqrt(this.MAX_SAFE_PIXELS / (img.naturalWidth * img.naturalHeight))
+            // More conservative scaling for large images
+            const scale = Math.sqrt((this.MAX_SAFE_PIXELS * 0.8) / (img.naturalWidth * img.naturalHeight))
             const tempCanvas = document.createElement("canvas")
             const tempCtx = tempCanvas.getContext("2d")!
             
@@ -390,6 +420,17 @@ export class ImageProcessor {
 
   // Memory cleanup utility
   static cleanupMemory(): void {
+    // Clean up active canvases
+    this.activeCanvases.forEach(canvas => {
+      const ctx = canvas.getContext("2d")
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+      }
+      canvas.width = 1
+      canvas.height = 1
+    })
+    this.activeCanvases.clear()
+    
     // Force garbage collection if available
     if ('gc' in window && typeof (window as any).gc === 'function') {
       (window as any).gc()
@@ -403,4 +444,23 @@ export class ImageProcessor {
       }
     })
   }
+  
+  // Prevent memory leaks during navigation
+  static handlePageUnload(): void {
+    this.cleanupMemory()
+  }
+}
+
+// Auto-cleanup on page unload
+if (typeof window !== "undefined") {
+  window.addEventListener('beforeunload', () => {
+    ImageProcessor.handlePageUnload()
+  })
+  
+  // Periodic cleanup
+  setInterval(() => {
+    if (ImageProcessor.activeCanvases.size === 0) {
+      ImageProcessor.cleanupMemory()
+    }
+  }, 30000) // Every 30 seconds
 }
