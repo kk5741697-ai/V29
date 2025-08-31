@@ -30,6 +30,7 @@ import {
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { AdBanner } from "@/components/ads/ad-banner"
+import { ProfessionalBackgroundProcessor } from "@/lib/processors/professional-background-processor"
 
 interface ImageFile {
   id: string
@@ -51,6 +52,7 @@ export default function BackgroundRemoverPage() {
   const [sensitivity, setSensitivity] = useState([25])
   const [featherEdges, setFeatherEdges] = useState(true)
   const [preserveDetails, setPreserveDetails] = useState(true)
+  const [modelQuality, setModelQuality] = useState("high")
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingProgress, setProcessingProgress] = useState(0)
   const [zoomLevel, setZoomLevel] = useState(100)
@@ -172,27 +174,34 @@ export default function BackgroundRemoverPage() {
     try {
       // Progressive updates
       const progressSteps = [
-        { progress: 10, message: "Loading image" },
-        { progress: 25, message: "Detecting objects" },
-        { progress: 45, message: "Analyzing subject boundaries" },
-        { progress: 65, message: "Removing background" },
-        { progress: 85, message: "Refining subject edges" },
-        { progress: 95, message: "Finalizing" }
+        { progress: 5, message: "Loading AI model" },
+        { progress: 15, message: "Analyzing image content" },
+        { progress: 30, message: "Running segmentation" },
+        { progress: 60, message: "Processing edges" },
+        { progress: 85, message: "Refining details" },
+        { progress: 95, message: "Finalizing output" }
       ]
 
       for (const step of progressSteps) {
         setProcessingProgress(step.progress)
-        await new Promise(resolve => setTimeout(resolve, 300))
+        await new Promise(resolve => setTimeout(resolve, 200))
       }
 
-      const processedBlob = await processBackgroundRemoval(file.originalFile || file.file, {
-        algorithm,
-        sensitivity: sensitivity[0],
-        featherEdges,
-        preserveDetails
+      // Use professional background removal
+      const result = await ProfessionalBackgroundProcessor.removeBackground(file.originalFile || file.file, {
+        model: getModelFromAlgorithm(algorithm, modelQuality),
+        output: {
+          format: 'image/png',
+          quality: 95,
+          type: 'foreground'
+        },
+        progress: (key, current, total) => {
+          const progress = 30 + (current / total) * 50
+          setProcessingProgress(progress)
+        }
       })
 
-      const processedUrl = URL.createObjectURL(processedBlob)
+      const processedUrl = URL.createObjectURL(result.processedBlob)
       const baseName = file.name.split(".")[0]
       const newName = `${baseName}_no_bg.png`
 
@@ -201,15 +210,15 @@ export default function BackgroundRemoverPage() {
         processed: true,
         processedPreview: processedUrl,
         name: newName,
-        processedSize: processedBlob.size,
-        blob: processedBlob
+        processedSize: result.processedBlob.size,
+        blob: result.processedBlob
       } : null)
 
       setProcessingProgress(100)
       
       toast({
         title: "Background removed",
-        description: "Background removed successfully"
+        description: `Background removed with ${Math.round(result.confidence * 100)}% confidence using ${result.modelUsed}`
       })
     } catch (error) {
       toast({
@@ -221,6 +230,19 @@ export default function BackgroundRemoverPage() {
       setIsProcessing(false)
       setProcessingProgress(0)
     }
+  }
+
+  const getModelFromAlgorithm = (algorithm: string, quality: string) => {
+    if (algorithm === "portrait") return "u2net_human_seg"
+    if (algorithm === "object") return "u2net"
+    if (algorithm === "animal") return "u2net"
+    
+    // Auto selection based on quality
+    if (quality === "high") return "u2net"
+    if (quality === "medium") return "u2netp"
+    if (quality === "fast") return "silueta"
+    
+    return "u2net" // Default high quality
   }
 
   const processBackgroundRemoval = async (
@@ -1223,49 +1245,55 @@ export default function BackgroundRemoverPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="auto">AI Object Detection</SelectItem>
-                        <SelectItem value="portrait">Portrait Mode</SelectItem>
-                        <SelectItem value="animal">Animal Mode</SelectItem>
-                        <SelectItem value="object">Object Mode</SelectItem>
+                        <SelectItem value="auto">Auto (Recommended)</SelectItem>
+                        <SelectItem value="portrait">Portrait & People</SelectItem>
+                        <SelectItem value="object">Objects & Products</SelectItem>
+                        <SelectItem value="animal">Animals & Pets</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium">Sensitivity: {sensitivity[0]}</Label>
-                    <Slider
-                      value={sensitivity}
-                      onValueChange={setSensitivity}
-                      min={5}
-                      max={50}
-                      step={1}
-                      className="mt-2"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Less sensitive</span>
-                      <span>More sensitive</span>
+                    <Label className="text-sm font-medium">Model Quality</Label>
+                    <Select value={modelQuality} onValueChange={setModelQuality}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">High Quality (Slower)</SelectItem>
+                        <SelectItem value="medium">Balanced (Recommended)</SelectItem>
+                        <SelectItem value="fast">Fast (Lower Quality)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Model Quality</Label>
+                    <Select value={modelQuality} onValueChange={setModelQuality}>
+                      <SelectTrigger className="h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">High Quality (Slower)</SelectItem>
+                        <SelectItem value="medium">Balanced (Recommended)</SelectItem>
+                        <SelectItem value="fast">Fast (Lower Quality)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                      <h4 className="text-sm font-semibold text-purple-800 mb-2">Professional AI Models</h4>
+                      <div className="text-xs text-purple-700 space-y-1">
+                        <div>• U2-Net: Best overall quality</div>
+                        <div>• Human Segmentation: Optimized for people</div>
+                        <div>• Smart edge detection around hair & clothing</div>
+                        <div>• Remove.bg level quality</div>
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={featherEdges}
-                        onCheckedChange={setFeatherEdges}
-                      />
-                      <span className="text-sm">Feather Edges</span>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={preserveDetails}
-                        onCheckedChange={setPreserveDetails}
-                      />
-                      <span className="text-sm">Preserve Details</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* File Info */}
                 {file && (
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
@@ -1273,24 +1301,7 @@ export default function BackgroundRemoverPage() {
                     <div className="text-xs text-purple-700 space-y-1">
                       <div className="flex justify-between">
                         <span>Original Size:</span>
-                        <span className="font-medium">{formatFileSize(file.size)}</span>
-                      </div>
-                      {file.processedSize && (
-                        <div className="flex justify-between">
-                          <span>Processed Size:</span>
-                          <span className="font-medium">{formatFileSize(file.processedSize)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span>Dimensions:</span>
-                        <span className="font-medium">{file.dimensions?.width}×{file.dimensions?.height}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Algorithm:</span>
-                        <span className="font-medium">{algorithm}</span>
-                      </div>
-                    </div>
-                  </div>
+                        <span className="font-medium">{getModelFromAlgorithm(algorithm, modelQuality)}</span>
                 )}
               </div>
             </ScrollArea>

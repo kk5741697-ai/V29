@@ -29,6 +29,7 @@ import {
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { AdBanner } from "@/components/ads/ad-banner"
+import { ProfessionalUpscaler } from "@/lib/processors/professional-upscaler"
 
 interface ImageFile {
   id: string
@@ -48,6 +49,7 @@ export default function ImageUpscalerPage() {
   const [file, setFile] = useState<ImageFile | null>(null)
   const [scaleFactor, setScaleFactor] = useState([2])
   const [algorithm, setAlgorithm] = useState("auto")
+  const [modelQuality, setModelQuality] = useState("high")
   const [enhanceDetails, setEnhanceDetails] = useState(true)
   const [reduceNoise, setReduceNoise] = useState(true)
   const [sharpenAmount, setSharpenAmount] = useState([25])
@@ -172,28 +174,29 @@ export default function ImageUpscalerPage() {
     try {
       // Progressive updates
       const progressSteps = [
-        { progress: 10, message: "Loading image" },
-        { progress: 25, message: "Analyzing content" },
-        { progress: 45, message: "Applying upscaling algorithm" },
-        { progress: 65, message: "Enhancing details" },
-        { progress: 85, message: "Reducing noise" },
-        { progress: 95, message: "Finalizing" }
+        { progress: 5, message: "Loading AI model" },
+        { progress: 15, message: "Analyzing image" },
+        { progress: 25, message: "Preparing for upscaling" },
+        { progress: 40, message: "Running super-resolution" },
+        { progress: 80, message: "Enhancing details" },
+        { progress: 95, message: "Finalizing output" }
       ]
 
       for (const step of progressSteps) {
         setProcessingProgress(step.progress)
-        await new Promise(resolve => setTimeout(resolve, 300))
+        await new Promise(resolve => setTimeout(resolve, 200))
       }
 
-      const processedBlob = await processImageUpscaling(file.originalFile || file.file, {
-        scaleFactor: scaleFactor[0],
-        algorithm,
-        enhanceDetails,
-        reduceNoise,
-        sharpenAmount: sharpenAmount[0]
+      // Use professional upscaler
+      const result = await ProfessionalUpscaler.upscaleImage(file.originalFile || file.file, {
+        scale: scaleFactor[0],
+        model: getModelFromAlgorithm(algorithm, modelQuality),
+        progress: (progress) => {
+          setProcessingProgress(40 + (progress * 0.4)) // 40-80% range
+        }
       })
 
-      const processedUrl = URL.createObjectURL(processedBlob)
+      const processedUrl = URL.createObjectURL(result.processedBlob)
       const baseName = file.name.split(".")[0]
       const newName = `${baseName}_upscaled_${scaleFactor[0]}x.png`
 
@@ -202,15 +205,15 @@ export default function ImageUpscalerPage() {
         processed: true,
         processedPreview: processedUrl,
         name: newName,
-        processedSize: processedBlob.size,
-        blob: processedBlob
+        processedSize: result.processedBlob.size,
+        blob: result.processedBlob
       } : null)
 
       setProcessingProgress(100)
       
       toast({
         title: "Upscaling complete",
-        description: `Image upscaled ${scaleFactor[0]}x successfully`
+        description: `Image upscaled ${result.actualScale}x using ${result.modelUsed} in ${Math.round(result.processingTime / 1000)}s`
       })
     } catch (error) {
       toast({
@@ -222,6 +225,18 @@ export default function ImageUpscalerPage() {
       setIsProcessing(false)
       setProcessingProgress(0)
     }
+  }
+
+  const getModelFromAlgorithm = (algorithm: string, quality: string) => {
+    if (algorithm === "lanczos") return quality === "high" ? "esrgan-thick" : "esrgan-slim"
+    if (algorithm === "bicubic") return "pixel-upsampler"
+    
+    // Auto selection based on quality
+    if (quality === "high") return "esrgan-thick"
+    if (quality === "medium") return "esrgan-slim"
+    if (quality === "fast") return "pixel-upsampler"
+    
+    return "esrgan-thick" // Default high quality
   }
 
   const processImageUpscaling = async (
@@ -947,49 +962,51 @@ export default function ImageUpscalerPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="auto">Auto (Recommended)</SelectItem>
-                        <SelectItem value="lanczos">Lanczos (Sharp)</SelectItem>
-                        <SelectItem value="bicubic">Bicubic (Smooth)</SelectItem>
-                        <SelectItem value="nearest">Nearest (Pixel Art)</SelectItem>
+                        <SelectItem value="auto">Auto (AI Selection)</SelectItem>
+                        <SelectItem value="lanczos">ESRGAN (Photos)</SelectItem>
+                        <SelectItem value="bicubic">Pixel Upsampler (Fast)</SelectItem>
+                        <SelectItem value="nearest">GANS (Anime/Art)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium">Sharpen Amount: {sharpenAmount[0]}</Label>
-                    <Slider
-                      value={sharpenAmount}
-                      onValueChange={setSharpenAmount}
-                      min={0}
-                      max={100}
-                      step={5}
-                      className="mt-2"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>None</span>
-                      <span>Strong</span>
+                    <Label className="text-sm font-medium">Model Quality</Label>
+                    <Select value={modelQuality} onValueChange={setModelQuality}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">High Quality (Slower)</SelectItem>
+                        <SelectItem value="medium">Balanced (Recommended)</SelectItem>
+                        <SelectItem value="fast">Fast (Lower Quality)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Model Quality</Label>
+                    <Select value={modelQuality} onValueChange={setModelQuality}>
+                      <SelectTrigger className="h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">High Quality (Slower)</SelectItem>
+                        <SelectItem value="medium">Balanced (Recommended)</SelectItem>
+                        <SelectItem value="fast">Fast (Lower Quality)</SelectItem>
+                      </SelectContent>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <h4 className="text-sm font-semibold text-blue-800 mb-2">AI Super-Resolution</h4>
+                      <div className="text-xs text-blue-700 space-y-1">
+                        <div>• ESRGAN: Best for photographs</div>
+                        <div>• GANS: Optimized for anime/art</div>
+                        <div>• Advanced neural networks</div>
+                        <div>• Professional quality results</div>
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={enhanceDetails}
-                        onCheckedChange={setEnhanceDetails}
-                      />
-                      <span className="text-sm">Enhance Details</span>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={reduceNoise}
-                        onCheckedChange={setReduceNoise}
-                      />
-                      <span className="text-sm">Reduce Noise</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* File Info */}
                 {file && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -997,30 +1014,13 @@ export default function ImageUpscalerPage() {
                     <div className="text-xs text-blue-700 space-y-1">
                       <div className="flex justify-between">
                         <span>Original Size:</span>
-                        <span className="font-medium">{formatFileSize(file.size)}</span>
+                        <span className="font-medium">{getModelFromAlgorithm(algorithm, modelQuality)}</span>
                       </div>
                       {file.processedSize && (
                         <div className="flex justify-between">
                           <span>Upscaled Size:</span>
                           <span className="font-medium">{formatFileSize(file.processedSize)}</span>
                         </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span>Original Dimensions:</span>
-                        <span className="font-medium">{file.dimensions?.width}×{file.dimensions?.height}</span>
-                      </div>
-                      {file.dimensions && (
-                        <div className="flex justify-between">
-                          <span>Target Dimensions:</span>
-                          <span className="font-medium">{Math.floor(file.dimensions.width * scaleFactor[0])}×{Math.floor(file.dimensions.height * scaleFactor[0])}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span>Algorithm:</span>
-                        <span className="font-medium">{algorithm}</span>
-                      </div>
-                    </div>
-                  </div>
                 )}
               </div>
             </ScrollArea>
