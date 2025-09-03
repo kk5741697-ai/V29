@@ -22,6 +22,97 @@ const textTools = [
     category: "Text Tools",
   },
   {
+    title: "JavaScript Formatter",
+    description: "Beautify, minify, and format JavaScript code with syntax validation and optimization options.",
+    href: "/javascript-formatter",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "JavaScript Obfuscator",
+    description: "Obfuscate JavaScript code to protect intellectual property and make reverse engineering difficult.",
+    href: "/javascript-obfuscator",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "JavaScript Tester",
+    description: "Test and execute JavaScript code in a safe environment with console output capture.",
+    href: "/javascript-tester",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "JavaScript Escape/Unescape",
+    description: "Escape or unescape JavaScript strings, regular expressions, and Unicode characters.",
+    href: "/javascript-escape",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "SQL Formatter",
+    description: "Format, beautify, and minify SQL queries with proper indentation and keyword formatting.",
+    href: "/sql-formatter",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "PHP Formatter",
+    description: "Beautify and format PHP code with proper indentation and syntax highlighting.",
+    href: "/php-formatter",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "Python Formatter",
+    description: "Format and beautify Python code following PEP 8 standards with proper indentation.",
+    href: "/python-formatter",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "YAML Formatter",
+    description: "Format, validate, and beautify YAML configuration files with proper indentation.",
+    href: "/yaml-formatter",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "HTML to Markdown",
+    description: "Convert HTML markup to clean Markdown format with support for tables and formatting.",
+    href: "/html-to-markdown",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "HTML to PHP",
+    description: "Convert HTML markup to PHP echo statements, heredoc syntax, or variable assignments.",
+    href: "/html-to-php",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "JSON to CSV",
+    description: "Convert JSON arrays to CSV format with customizable delimiters and formatting options.",
+    href: "/json-to-csv",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "XML to JSON",
+    description: "Convert XML documents to JSON format with attribute preservation and array handling.",
+    href: "/xml-to-json",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "Base64 to Text",
+    description: "Decode Base64 strings to text or encode text to Base64 with URL-safe options.",
+    href: "/base64-to-text",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
     title: "Base64 Encoder/Decoder",
     description: "Encode text to Base64 or decode Base64 strings back to text with URL-safe options.",
     href: "/base64-encoder",
@@ -115,7 +206,7 @@ export default function TextToolsPage() {
             <div>
               <h1 className="text-3xl font-heading font-bold text-foreground">Text & Code Tools</h1>
               <p className="text-muted-foreground">
-                52 professional tools for formatting, validating, and converting text and code
+                65+ professional tools for formatting, validating, and converting text and code
               </p>
             </div>
           </div>

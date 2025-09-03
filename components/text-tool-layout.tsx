@@ -19,13 +19,10 @@ import {
   Copy, 
   Download, 
   Upload, 
-  Link, 
   RefreshCw,
   Settings,
   Trash2,
   Eye,
-  Share2,
-  Heart,
   AlertCircle,
   FileText,
   Menu,
@@ -34,9 +31,6 @@ import {
   Save,
   FolderOpen,
   Edit,
-  Check,
-  X,
-  Info
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { AdBanner } from "@/components/ads/ad-banner"
@@ -362,21 +356,6 @@ export function TextToolLayout({
               <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                      <Menu className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                      <Undo className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                      <Redo className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                      <FolderOpen className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                      <Save className="h-4 w-4" />
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => copyToClipboard(input)} className="text-white hover:bg-gray-500">
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -386,14 +365,7 @@ export function TextToolLayout({
                     <Button variant="ghost" size="sm" onClick={() => setInput("")} className="text-white hover:bg-gray-500">
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                      <Edit className="h-4 w-4" />
-                    </Button>
                   </div>
-                  <div className="text-xs lg:text-sm text-gray-300 italic">Sample</div>
                 </div>
               </CardHeader>
               <CardContent className="px-4 lg:px-6 pt-4 h-[400px] lg:h-[500px] flex flex-col">
@@ -570,27 +542,12 @@ export function TextToolLayout({
               <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                      <Menu className="h-4 w-4" />
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => copyToClipboard(output)} className="text-white hover:bg-gray-500">
                       <Copy className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => downloadFile(output, `output${getFileExtension()}`)} className="text-white hover:bg-gray-500">
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="text-xs lg:text-sm font-medium bg-gray-800 text-white px-2 py-1 rounded">
-                    Output
                   </div>
                 </div>
               </CardHeader>
