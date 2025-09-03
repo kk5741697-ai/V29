@@ -31,6 +31,8 @@ import {
   Save,
   FolderOpen,
   Edit,
+  Link,
+  Globe
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { AdBanner } from "@/components/ads/ad-banner"
@@ -62,6 +64,8 @@ interface TextToolLayoutProps {
   options?: ToolOption[]
   examples?: TextExample[]
   fileExtensions?: string[]
+  supportFileUpload?: boolean
+  supportUrlInput?: boolean
 }
 
 export function TextToolLayout({
@@ -74,7 +78,9 @@ export function TextToolLayout({
   validateFunction,
   options = [],
   examples = [],
-  fileExtensions = [".txt"]
+  fileExtensions = [".txt"],
+  supportFileUpload = true,
+  supportUrlInput = true
 }: TextToolLayoutProps) {
   const [input, setInput] = useState("")
   const [output, setOutput] = useState("")
@@ -84,6 +90,10 @@ export function TextToolLayout({
   const [toolOptions, setToolOptions] = useState<Record<string, any>>({})
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [inputMode, setInputMode] = useState<"text" | "file" | "url">("text")
+  const [urlInput, setUrlInput] = useState("")
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Detect mobile
   useEffect(() => {
@@ -112,6 +122,101 @@ export function TextToolLayout({
     }
   }, [input, autoUpdate, toolOptions])
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validExtensions = fileExtensions.concat(['.txt', '.json', '.xml', '.html', '.css', '.js', '.ts', '.jsx', '.tsx', '.vue', '.php', '.py', '.java', '.cpp', '.c', '.h', '.cs', '.rb', '.go', '.rs', '.swift', '.kt', '.scala', '.sql', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf'])
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+    
+    if (!validExtensions.includes(fileExtension) && !file.type.startsWith('text/')) {
+      toast({
+        title: "Invalid file type",
+        description: `Please select a text file. Supported: ${validExtensions.join(', ')}`,
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 10MB",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const text = await file.text()
+      setInput(text)
+      setInputMode("text")
+      toast({
+        title: "File loaded",
+        description: `${file.name} loaded successfully`
+      })
+    } catch (error) {
+      toast({
+        title: "Failed to read file",
+        description: "Could not read the selected file",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleUrlLoad = async () => {
+    if (!urlInput.trim()) {
+      toast({
+        title: "URL required",
+        description: "Please enter a URL to load content from",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Basic URL validation
+    try {
+      new URL(urlInput)
+    } catch {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid URL",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsLoadingUrl(true)
+    
+    try {
+      const response = await fetch(urlInput)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const contentType = response.headers.get('content-type') || ''
+      if (!contentType.includes('text/') && !contentType.includes('application/json') && !contentType.includes('application/xml')) {
+        throw new Error('URL does not contain text content')
+      }
+      
+      const text = await response.text()
+      setInput(text)
+      setInputMode("text")
+      toast({
+        title: "URL loaded",
+        description: "Content loaded successfully from URL"
+      })
+    } catch (error) {
+      toast({
+        title: "Failed to load URL",
+        description: error instanceof Error ? error.message : "Could not load content from URL",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoadingUrl(false)
+    }
+  }
   const processText = () => {
     if (!input.trim()) {
       setOutput("")
@@ -185,6 +290,7 @@ export function TextToolLayout({
 
   const loadExample = (exampleContent: string) => {
     setInput(exampleContent)
+    setInputMode("text")
   }
 
   const getFileExtension = () => {
@@ -204,6 +310,72 @@ export function TextToolLayout({
         
         <ScrollArea className="h-full">
           <div className="p-6 space-y-6">
+            {/* Input Mode Selection */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Input Source</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={inputMode === "text" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setInputMode("text")}
+                  className="text-xs"
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  Text
+                </Button>
+                {supportFileUpload && (
+                  <Button
+                    variant={inputMode === "file" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setInputMode("file")
+                      fileInputRef.current?.click()
+                    }}
+                    className="text-xs"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    File
+                  </Button>
+                )}
+                {supportUrlInput && (
+                  <Button
+                    variant={inputMode === "url" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setInputMode("url")}
+                    className="text-xs"
+                  >
+                    <Globe className="h-3 w-3 mr-1" />
+                    URL
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* URL Input */}
+            {inputMode === "url" && supportUrlInput && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Load from URL</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://example.com/file.json"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleUrlLoad}
+                    disabled={isLoadingUrl}
+                    size="sm"
+                  >
+                    {isLoadingUrl ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    ) : (
+                      <Download className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
             {/* Tool Options */}
             {options.map((option) => (
               <div key={option.key} className="space-y-2">
@@ -355,6 +527,47 @@ export function TextToolLayout({
             <Card className="bg-white h-full">
               <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
                 <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium">Input</span>
+                    {(supportFileUpload || supportUrlInput) && (
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setInputMode("text")}
+                          className={`text-xs h-6 px-2 ${inputMode === "text" ? "bg-white/20" : ""} text-white hover:bg-white/20`}
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Text
+                        </Button>
+                        {supportFileUpload && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setInputMode("file")
+                              fileInputRef.current?.click()
+                            }}
+                            className={`text-xs h-6 px-2 ${inputMode === "file" ? "bg-white/20" : ""} text-white hover:bg-white/20`}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            File
+                          </Button>
+                        )}
+                        {supportUrlInput && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setInputMode("url")}
+                            className={`text-xs h-6 px-2 ${inputMode === "url" ? "bg-white/20" : ""} text-white hover:bg-white/20`}
+                          >
+                            <Globe className="h-3 w-3 mr-1" />
+                            URL
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
                     <Button variant="ghost" size="sm" onClick={() => copyToClipboard(input)} className="text-white hover:bg-gray-500">
                       <Copy className="h-4 w-4" />
@@ -369,11 +582,36 @@ export function TextToolLayout({
                 </div>
               </CardHeader>
               <CardContent className="px-4 lg:px-6 pt-4 h-[400px] lg:h-[500px] flex flex-col">
+                {/* URL Input Mode */}
+                {inputMode === "url" && supportUrlInput && (
+                  <div className="space-y-3 mb-4">
+                    <div className="flex space-x-2">
+                      <Input
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="https://example.com/file.json"
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={handleUrlLoad}
+                        disabled={isLoadingUrl}
+                        size="sm"
+                      >
+                        {isLoadingUrl ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={placeholder}
-                  className="flex-1 font-mono text-sm resize-none border-0 focus:ring-0 bg-transparent"
+                  className={`flex-1 font-mono text-sm resize-none border-0 focus:ring-0 bg-transparent ${inputMode === "url" ? "h-[300px]" : ""}`}
                 />
                 <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
                   <span>Ln: {input.split('\n').length} Col: {input.length}</span>
@@ -541,6 +779,7 @@ export function TextToolLayout({
             <Card className="bg-white h-full">
               <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
                 <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Output</span>
                   <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
                     <Button variant="ghost" size="sm" onClick={() => copyToClipboard(output)} className="text-white hover:bg-gray-500">
                       <Copy className="h-4 w-4" />
@@ -637,6 +876,18 @@ export function TextToolLayout({
       </div>
 
       <MobileOptionsSidebar />
+      
+      {/* Hidden File Input */}
+      {supportFileUpload && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={fileExtensions.concat(['.txt', '.json', '.xml', '.html', '.css', '.js', '.ts', '.jsx', '.tsx', '.vue', '.php', '.py', '.java', '.cpp', '.c', '.h', '.cs', '.rb', '.go', '.rs', '.swift', '.kt', '.scala', '.sql', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf']).join(',')}
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+      )}
+      
       <Footer />
     </div>
   )
