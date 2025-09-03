@@ -6,6 +6,7 @@ simple-*
 improved-*
 advanced-*
 etc.
+
 any types of errors should not have in any bugs or problems in
 @/lib/*
 @/components/*
