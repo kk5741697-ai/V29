@@ -9,12 +9,11 @@ const upscaleOptions = [
     key: "scaleFactor",
     label: "Scale Factor",
     type: "select" as const,
-    defaultValue: "2",
+    defaultValue: "1.5",
     selectOptions: [
+      { value: "1.25", label: "1.25x (125%)" },
       { value: "1.5", label: "1.5x (150%)" },
-      { value: "2", label: "2x (200%)" },
-      { value: "3", label: "3x (300%)" },
-      { value: "4", label: "4x (400%)" },
+      { value: "2", label: "2x (200%) - Basic" },
     ],
     section: "Scale",
   },
@@ -27,33 +26,8 @@ const upscaleOptions = [
       { value: "lanczos", label: "Lanczos (High Quality)" },
       { value: "bicubic", label: "Bicubic (Balanced)" },
       { value: "bilinear", label: "Bilinear (Fast)" },
-      { value: "nearest", label: "Nearest Neighbor (Pixel Art)" },
     ],
     section: "Algorithm",
-  },
-  {
-    key: "enhanceDetails",
-    label: "Enhance Details",
-    type: "checkbox" as const,
-    defaultValue: true,
-    section: "Enhancement",
-  },
-  {
-    key: "reduceNoise",
-    label: "Reduce Noise",
-    type: "checkbox" as const,
-    defaultValue: false,
-    section: "Enhancement",
-  },
-  {
-    key: "sharpen",
-    label: "Sharpening",
-    type: "slider" as const,
-    defaultValue: 25,
-    min: 0,
-    max: 100,
-    step: 5,
-    section: "Enhancement",
   },
 ]
 
@@ -68,11 +42,12 @@ async function upscaleImages(files: any[], options: any) {
 
     const processedFiles = await Promise.all(
       files.map(async (file) => {
-        const scaleFactor = parseFloat(options.scaleFactor || "2")
+        const scaleFactor = parseFloat(options.scaleFactor || "1.5")
         
-        const processedBlob = await ImageProcessor.resizeImage(file.originalFile || file.file, {
-          width: Math.floor((file.dimensions?.width || 800) * scaleFactor),
-          height: Math.floor((file.dimensions?.height || 600) * scaleFactor),
+        // Use basic browser-based upscaling
+        const processedBlob = await this.basicUpscale(file.originalFile || file.file, {
+          scaleFactor,
+          algorithm: options.algorithm,
           maintainAspectRatio: true,
           outputFormat: "png",
           quality: 95,
@@ -109,7 +84,17 @@ async function upscaleImages(files: any[], options: any) {
     }
   }
 }
+}
 
+// Basic upscaling function
+async function basicUpscale(file: File, options: any): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+    if (!ctx) {
+      reject(new Error("Canvas not supported"))
+      return
+    }
 export default function ImageUpscalerPage() {
   return (
     <ImageToolsLayout
@@ -120,9 +105,51 @@ export default function ImageUpscalerPage() {
       processFunction={upscaleImages}
       options={upscaleOptions}
       maxFiles={5}
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const scaleFactor = options.scaleFactor || 1.5
+        const targetWidth = Math.floor(img.naturalWidth * scaleFactor)
+        const targetHeight = Math.floor(img.naturalHeight * scaleFactor)
       allowBatchProcessing={true}
+        canvas.width = targetWidth
+        canvas.height = targetHeight
       supportedFormats={["image/jpeg", "image/png", "image/webp"]}
+        // Apply algorithm-specific settings
+        switch (options.algorithm) {
+          case "bicubic":
+            ctx.imageSmoothingEnabled = true
+            ctx.imageSmoothingQuality = "high"
+            break
+          case "bilinear":
+            ctx.imageSmoothingEnabled = true
+            ctx.imageSmoothingQuality = "medium"
+            break
+          default: // lanczos
+            ctx.imageSmoothingEnabled = true
+            ctx.imageSmoothingQuality = "high"
+        }
       outputFormats={["png", "jpeg", "webp"]}
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
     />
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob)
+            } else {
+              reject(new Error("Failed to create blob"))
+            }
+          },
+          "image/png",
+          0.95
+        )
+      } catch (error) {
+        reject(error)
+      }
+    }
   )
+    img.onerror = () => reject(new Error("Failed to load image"))
+    img.crossOrigin = "anonymous"
+    img.src = URL.createObjectURL(file)
+  })
 }

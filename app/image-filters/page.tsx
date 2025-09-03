@@ -315,7 +315,6 @@ export default function ImageFiltersPage() {
             <Button 
               onClick={() => {
                 downloadFile()
-                setIsMobileSidebarOpen(false)
               }}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-base font-semibold"
               size="lg"

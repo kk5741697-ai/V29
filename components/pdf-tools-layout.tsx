@@ -372,7 +372,6 @@ export function PDFToolsLayout({
           <Button 
             onClick={() => {
               handleProcess()
-              setIsMobileSidebarOpen(false)
             }}
             disabled={isProcessing || files.length === 0}
             className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-base font-semibold"

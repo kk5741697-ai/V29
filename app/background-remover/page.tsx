@@ -357,7 +357,6 @@ export default function BackgroundRemoverPage() {
           <Button 
             onClick={() => {
               handleProcess()
-              setIsMobileSidebarOpen(false)
             }}
             disabled={isProcessing || files.length === 0}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-base font-semibold"
@@ -381,7 +380,6 @@ export default function BackgroundRemoverPage() {
               onClick={() => {
                 const processedFile = files.find(f => f.processed)
                 if (processedFile) downloadFile(processedFile)
-                setIsMobileSidebarOpen(false)
               }}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-semibold"
               size="lg"
@@ -423,11 +421,11 @@ export default function BackgroundRemoverPage() {
           </div>
 
           {/* Implementation Notice */}
-          <Alert className="mb-6 max-w-4xl mx-auto border-blue-200 bg-blue-50">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              <strong>Client-Side Processing:</strong> This tool uses advanced canvas-based algorithms for background removal. 
-              While not as sophisticated as AI models, it provides good results for images with clear subject-background contrast.
+          <Alert className="mb-6 max-w-4xl mx-auto border-amber-200 bg-amber-50">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Notice:</strong> Professional AI background removal requires specialized models and significant computational resources. 
+              This tool provides basic background removal for simple images. For professional results, consider using dedicated AI services like Remove.bg.
             </AlertDescription>
           </Alert>
 

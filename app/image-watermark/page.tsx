@@ -18,10 +18,10 @@ const watermarkOptions = [
     defaultValue: false,
   },
   {
-    key: "watermarkImageUrl",
-    label: "Watermark Image URL",
-    type: "text" as const,
-    defaultValue: "",
+    key: "watermarkImage",
+    label: "Watermark Image File",
+    type: "file" as const,
+    defaultValue: null,
     condition: (options) => options.useImageWatermark,
   },
   {

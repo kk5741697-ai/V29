@@ -33,7 +33,7 @@ import { AdBanner } from "@/components/ads/ad-banner"
 interface ToolOption {
   key: string
   label: string
-  type: "text" | "input" | "select" | "checkbox" | "slider" | "color"
+  type: "text" | "input" | "select" | "checkbox" | "slider" | "color" | "file"
   defaultValue: any
   min?: number
   max?: number
@@ -550,7 +550,6 @@ export function ImageToolsLayout({
           <Button 
             onClick={() => {
               handleProcess()
-              setIsMobileSidebarOpen(false)
             }}
             disabled={isProcessing || files.length === 0}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-semibold"
@@ -573,7 +572,6 @@ export function ImageToolsLayout({
             <Button 
               onClick={() => {
                 downloadAll()
-                setIsMobileSidebarOpen(false)
               }}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-semibold"
               size="lg"
@@ -948,6 +946,38 @@ export function ImageToolsLayout({
                             />
                           )}
 
+                          {option.type === "file" && (
+                            <div className="space-y-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  const input = document.createElement("input")
+                                  input.type = "file"
+                                  input.accept = "image/*"
+                                  input.onchange = (e) => {
+                                    const file = (e.target as HTMLInputElement).files?.[0]
+                                    if (file) {
+                                      setToolOptions(prev => ({ ...prev, [option.key]: file }))
+                                    }
+                                  }
+                                  input.click()
+                                }}
+                                className="w-full"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {toolOptions[option.key] ? toolOptions[option.key].name : "Choose File"}
+                              </Button>
+                              {toolOptions[option.key] && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setToolOptions(prev => ({ ...prev, [option.key]: null }))}
+                                >
+                                  Remove File
+                                </Button>
+                              )}
+                            </div>
+                          )}
                           {option.type === "select" && (
                             <Select
                               value={toolOptions[option.key]?.toString()}
@@ -1020,6 +1050,38 @@ export function ImageToolsLayout({
                             </div>
                           )}
                         </div>
+                          {option.type === "file" && (
+                            <div className="space-y-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  const input = document.createElement("input")
+                                  input.type = "file"
+                                  input.accept = "image/*"
+                                  input.onchange = (e) => {
+                                    const file = (e.target as HTMLInputElement).files?.[0]
+                                    if (file) {
+                                      setToolOptions(prev => ({ ...prev, [option.key]: file }))
+                                    }
+                                  }
+                                  input.click()
+                                }}
+                                className="w-full h-9"
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                {toolOptions[option.key] ? toolOptions[option.key].name : "Choose File"}
+                              </Button>
+                              {toolOptions[option.key] && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setToolOptions(prev => ({ ...prev, [option.key]: null }))}
+                                >
+                                  Remove File
+                                </Button>
+                              )}
+                            </div>
+                          )}
                       )
                     })}
                   </div>

@@ -275,6 +275,18 @@ export function TextToolLayout({
             </div>
           </div>
         </ScrollArea>
+        
+        {/* Mobile Footer - Don't auto-close */}
+        <div className="p-4 border-t bg-white">
+          <Button 
+            onClick={() => {
+              processText()
+            }}
+            className="w-full bg-teal-500 hover:bg-teal-600 text-white py-3"
+          >
+            Process Text
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   )

@@ -7,6 +7,8 @@ improved-*
 advanced-*
 etc.
 
+never create unnecessary files, example: suppose i have already file image-processor.ts, now when i try to new chat or anything else, don't create like this or like anything duplicate real-image-processor.ts etc. hope you understand, you can just update the existing image-processor.ts initiate of real-image-processor.ts
+
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4755003409431265"
      crossorigin="anonymous"></script>
 

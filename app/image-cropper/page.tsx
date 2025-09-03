@@ -572,7 +572,6 @@ export default function ImageCropperPage() {
           <Button 
             onClick={() => {
               handleProcess()
-              setIsMobileSidebarOpen(false)
             }}
             disabled={isProcessing || files.length === 0}
             className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3 text-base font-semibold"
@@ -596,7 +595,6 @@ export default function ImageCropperPage() {
               onClick={() => {
                 const processedFile = files.find(f => f.processed)
                 if (processedFile) downloadFile(processedFile)
-                setIsMobileSidebarOpen(false)
               }}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-semibold"
               size="lg"
