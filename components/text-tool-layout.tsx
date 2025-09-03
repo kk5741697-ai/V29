@@ -349,177 +349,199 @@ export function TextToolLayout({
 
       {/* Main Interface */}
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          {/* Input Panel */}
-          <Card className="bg-white">
-            <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                    <Undo className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                    <Redo className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                    <FolderOpen className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                    <Save className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(input)} className="text-white hover:bg-gray-500">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => downloadFile(input, `input${getFileExtension()}`)} className="text-white hover:bg-gray-500">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setInput("")} className="text-white hover:bg-gray-500">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                    <Edit className="h-4 w-4" />
-                  </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 mb-6 lg:mb-8">
+          {/* Input Panel - 2/5 width */}
+          <div className="lg:col-span-2">
+            <Card className="bg-white h-full">
+              <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
+                      <Undo className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
+                      <Redo className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
+                      <FolderOpen className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
+                      <Save className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => copyToClipboard(input)} className="text-white hover:bg-gray-500">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => downloadFile(input, `input${getFileExtension()}`)} className="text-white hover:bg-gray-500">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setInput("")} className="text-white hover:bg-gray-500">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="text-xs lg:text-sm text-gray-300 italic">Sample</div>
                 </div>
-                <div className="text-xs lg:text-sm text-gray-300 italic">Sample</div>
-              </div>
-              
-              <Tabs defaultValue="file" className="w-full hidden lg:block">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-500">
-                  <TabsTrigger value="file" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-                    <FileText className="h-4 w-4 mr-2" />
-                    File
+                
+                <Tabs defaultValue="file" className="w-full hidden lg:block">
+                  <TabsList className="grid w-full grid-cols-2 bg-gray-500">
+                    <TabsTrigger value="file" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+                      <FileText className="h-4 w-4 mr-2" />
+                      File
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
+                      <Link className="h-4 w-4 mr-2" />
+                      URL
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </CardHeader>
+              <CardContent className="px-4 lg:px-6 pt-4 h-[400px] lg:h-[500px] flex flex-col">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={placeholder}
+                  className="flex-1 font-mono text-sm resize-none border-0 focus:ring-0 bg-transparent"
+                />
+                <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                  <span>Ln: {input.split('\n').length} Col: {input.length}</span>
+                  <div className="flex space-x-2 lg:space-x-4">
+                    <span className="font-mono">T</span>
+                    <span className="font-mono">T</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Center Section - 1/5 width */}
+          <div className="lg:col-span-1 flex flex-col justify-center space-y-4">
+            {/* File/URL Tabs */}
+            <div className="bg-white rounded-lg border">
+              <Tabs defaultValue="file" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="file" className="flex items-center space-x-2">
+                    <Upload className="h-4 w-4" />
+                    <span>File</span>
                   </TabsTrigger>
-                  <TabsTrigger value="url" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-                    <Link className="h-4 w-4 mr-2" />
-                    URL
+                  <TabsTrigger value="url" className="flex items-center space-x-2">
+                    <Link className="h-4 w-4" />
+                    <span>URL</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
-            </CardHeader>
-            <CardContent className="px-4 lg:px-6 pt-4">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={placeholder}
-                className="min-h-[300px] lg:min-h-[400px] font-mono text-sm resize-none border-0 focus:ring-0 bg-transparent"
-              />
-              <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <span>Ln: {input.split('\n').length} Col: {input.length}</span>
-                <div className="flex space-x-2 lg:space-x-4">
-                  <span className="font-mono">T</span>
-                  <span className="font-mono">T</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Output Panel */}
-          <Card className="bg-white">
-            <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(output)} className="text-white hover:bg-gray-500">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => downloadFile(output, `output${getFileExtension()}`)} className="text-white hover:bg-gray-500">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="text-xs lg:text-sm font-medium bg-gray-800 text-white px-2 py-1 rounded">
-                  Output
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2 mt-2">
+            {/* Auto Update Checkbox */}
+            <div className="bg-white rounded-lg border p-4">
+              <div className="flex items-center space-x-2">
                 <Checkbox
                   id="auto-update"
                   checked={autoUpdate}
                   onCheckedChange={setAutoUpdate}
-                  className="border-gray-300 data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
                 />
-                <label htmlFor="auto-update" className="text-sm text-gray-300">Auto Update</label>
+                <label htmlFor="auto-update" className="text-sm font-medium">Auto Update</label>
               </div>
-            </CardHeader>
-            <CardContent className="px-4 lg:px-6 pt-4">
-              {error ? (
-                <div className="min-h-[300px] lg:min-h-[400px] flex items-center justify-center text-red-500 bg-red-50 rounded border">
-                  <div className="text-center">
-                    <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                    <p>{error}</p>
-                  </div>
-                </div>
-              ) : (
-                <Textarea
-                  value={output}
-                  readOnly
-                  placeholder={outputPlaceholder}
-                  className="min-h-[300px] lg:min-h-[400px] font-mono text-sm resize-none border-0 focus:ring-0 bg-transparent"
-                />
-              )}
-              <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <span>Ln: {output.split('\n').length} Col: {output.length}</span>
-                <div className="flex space-x-2 lg:space-x-4">
-                  <span className="font-mono">T</span>
-                  <span className="font-mono">T</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        {/* Center Section with Ad and Action Button */}
-        <div className="text-center space-y-6 mb-8">
-          {/* Ad Banner */}
-          <div className="max-w-md mx-auto">
-            <AdBanner 
-              adSlot="text-tool-center"
-              adFormat="auto"
-              className="w-full border border-gray-300 rounded-lg"
-              mobileOptimized={true}
-            />
-          </div>
+            {/* Ad Banner */}
+            <div className="bg-white rounded-lg border p-2">
+              <AdBanner 
+                adSlot="text-tool-center"
+                adFormat="auto"
+                className="w-full min-h-[200px] border border-gray-300 rounded-lg flex items-center justify-center"
+                mobileOptimized={true}
+              />
+            </div>
 
-          {/* Main Action Button */}
-          <Button 
-            onClick={processText}
-            className="bg-teal-500 hover:bg-teal-600 text-white px-12 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all"
-            size="lg"
-          >
-            {title}
-          </Button>
-          
-          {/* Secondary Actions */}
-          <div className="flex flex-wrap justify-center gap-2 lg:gap-4">
+            {/* Main CTA Button */}
+            <Button 
+              onClick={processText}
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              {title}
+            </Button>
+            
+            {/* Download Button */}
             <Button 
               variant="outline"
               onClick={() => downloadFile(output, `converted${getFileExtension()}`)}
               disabled={!output}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600"
+              className="w-full bg-gray-700 text-white border-gray-600 hover:bg-gray-600 py-3"
             >
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
-            <Button variant="outline" className="text-blue-600 hidden lg:flex">
+
+            {/* Additional Tool Link */}
+            <Button variant="outline" className="w-full text-blue-600 hidden lg:flex">
               JSON Sorter
             </Button>
+          </div>
+
+          {/* Output Panel - 2/5 width */}
+          <div className="lg:col-span-2">
+            <Card className="bg-white h-full">
+              <CardHeader className="pb-2 px-4 lg:px-6 bg-gray-600 text-white rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1 lg:space-x-2 overflow-x-auto">
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500">
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => copyToClipboard(output)} className="text-white hover:bg-gray-500">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => downloadFile(output, `output${getFileExtension()}`)} className="text-white hover:bg-gray-500">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-white hover:bg-gray-500 hidden lg:flex">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="text-xs lg:text-sm font-medium bg-gray-800 text-white px-2 py-1 rounded">
+                    Output
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 lg:px-6 pt-4 h-[400px] lg:h-[500px] flex flex-col">
+                {error ? (
+                  <div className="flex-1 flex items-center justify-center text-red-500 bg-red-50 rounded border">
+                    <div className="text-center">
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                      <p>{error}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <Textarea
+                    value={output}
+                    readOnly
+                    placeholder={outputPlaceholder}
+                    className="flex-1 font-mono text-sm resize-none border-0 focus:ring-0 bg-transparent"
+                  />
+                )}
+                <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                  <span>Ln: {output.split('\n').length} Col: {output.length}</span>
+                  <div className="flex space-x-2 lg:space-x-4">
+                    <span className="font-mono">T</span>
+                    <span className="font-mono">T</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
