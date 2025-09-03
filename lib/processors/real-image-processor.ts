@@ -29,7 +29,7 @@ export class RealImageProcessor {
   static async resizeImage(file: File, options: RealImageOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: false })
       if (!ctx) {
         reject(new Error("Canvas not supported"))
         return
@@ -51,6 +51,10 @@ export class RealImageProcessor {
             }
           }
 
+          // Ensure minimum dimensions
+          targetWidth = Math.max(1, Math.floor(targetWidth))
+          targetHeight = Math.max(1, Math.floor(targetHeight))
+
           canvas.width = targetWidth
           canvas.height = targetHeight
 
@@ -60,13 +64,21 @@ export class RealImageProcessor {
             ctx.fillRect(0, 0, targetWidth, targetHeight)
           }
 
-          // High quality resize
+          // High quality resize with proper settings
           ctx.imageSmoothingEnabled = true
           ctx.imageSmoothingQuality = "high"
-          ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+          
+          // Use different algorithms based on scale
+          const scale = Math.min(targetWidth / img.naturalWidth, targetHeight / img.naturalHeight)
+          if (scale < 0.5) {
+            // Downscaling - use area averaging for better quality
+            this.drawImageWithAreaAveraging(ctx, img, 0, 0, targetWidth, targetHeight)
+          } else {
+            ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+          }
 
           // Convert to blob with proper quality
-          const quality = (options.quality || 90) / 100
+          const quality = Math.max(0.1, Math.min(1.0, (options.quality || 90) / 100))
           const mimeType = `image/${options.outputFormat || "png"}`
 
           canvas.toBlob(
@@ -91,10 +103,58 @@ export class RealImageProcessor {
     })
   }
 
+  private static drawImageWithAreaAveraging(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number
+  ): void {
+    // For significant downscaling, use multiple passes for better quality
+    const scale = Math.min(dw / img.naturalWidth, dh / img.naturalHeight)
+    
+    if (scale < 0.5) {
+      // Multi-pass downscaling
+      let currentCanvas = document.createElement("canvas")
+      let currentCtx = currentCanvas.getContext("2d")!
+      currentCanvas.width = img.naturalWidth
+      currentCanvas.height = img.naturalHeight
+      currentCtx.drawImage(img, 0, 0)
+      
+      let currentScale = 1
+      while (currentScale > scale * 2) {
+        const newScale = currentScale * 0.5
+        const newWidth = Math.floor(img.naturalWidth * newScale)
+        const newHeight = Math.floor(img.naturalHeight * newScale)
+        
+        const newCanvas = document.createElement("canvas")
+        const newCtx = newCanvas.getContext("2d")!
+        newCanvas.width = newWidth
+        newCanvas.height = newHeight
+        
+        newCtx.imageSmoothingEnabled = true
+        newCtx.imageSmoothingQuality = "high"
+        newCtx.drawImage(currentCanvas, 0, 0, newWidth, newHeight)
+        
+        currentCanvas = newCanvas
+        currentCtx = newCtx
+        currentScale = newScale
+      }
+      
+      // Final scaling
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = "high"
+      ctx.drawImage(currentCanvas, dx, dy, dw, dh)
+    } else {
+      ctx.drawImage(img, dx, dy, dw, dh)
+    }
+  }
+
   static async compressImage(file: File, options: RealImageOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: false })
       if (!ctx) {
         reject(new Error("Canvas not supported"))
         return
@@ -126,8 +186,8 @@ export class RealImageProcessor {
               break
           }
 
-          const targetWidth = Math.floor(img.naturalWidth * scale)
-          const targetHeight = Math.floor(img.naturalHeight * scale)
+          const targetWidth = Math.max(1, Math.floor(img.naturalWidth * scale))
+          const targetHeight = Math.max(1, Math.floor(img.naturalHeight * scale))
 
           canvas.width = targetWidth
           canvas.height = targetHeight
@@ -135,6 +195,13 @@ export class RealImageProcessor {
           // Use different smoothing based on compression level
           ctx.imageSmoothingEnabled = true
           ctx.imageSmoothingQuality = options.compressionLevel === "maximum" ? "medium" : "high"
+          
+          // Apply compression-specific optimizations
+          if (options.compressionLevel === "maximum") {
+            // Apply slight blur to reduce high-frequency details
+            ctx.filter = "blur(0.5px)"
+          }
+          
           ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
 
           // Apply additional quality reduction if specified
@@ -171,7 +238,7 @@ export class RealImageProcessor {
   static async convertFormat(file: File, format: "jpeg" | "png" | "webp", options: RealImageOptions = {}): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d", { alpha: format === "png" })
       if (!ctx) {
         reject(new Error("Canvas not supported"))
         return
@@ -193,7 +260,7 @@ export class RealImageProcessor {
           ctx.imageSmoothingQuality = "high"
           ctx.drawImage(img, 0, 0)
 
-          const quality = (options.quality || 90) / 100
+          const quality = Math.max(0.1, Math.min(1.0, (options.quality || 90) / 100))
           const mimeType = `image/${format}`
 
           canvas.toBlob(
@@ -221,7 +288,7 @@ export class RealImageProcessor {
   static async cropImage(file: File, cropArea: any, options: RealImageOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d", { alpha: true })
       if (!ctx) {
         reject(new Error("Canvas not supported"))
         return
@@ -232,24 +299,30 @@ export class RealImageProcessor {
         try {
           const { x, y, width, height } = cropArea
 
-          // Convert percentage to pixels
-          const sourceX = (x / 100) * img.naturalWidth
-          const sourceY = (y / 100) * img.naturalHeight
-          const sourceWidth = (width / 100) * img.naturalWidth
-          const sourceHeight = (height / 100) * img.naturalHeight
+          // Convert percentage to pixels with proper bounds checking
+          const sourceX = Math.max(0, Math.min(img.naturalWidth - 1, (x / 100) * img.naturalWidth))
+          const sourceY = Math.max(0, Math.min(img.naturalHeight - 1, (y / 100) * img.naturalHeight))
+          const sourceWidth = Math.max(1, Math.min(img.naturalWidth - sourceX, (width / 100) * img.naturalWidth))
+          const sourceHeight = Math.max(1, Math.min(img.naturalHeight - sourceY, (height / 100) * img.naturalHeight))
 
-          canvas.width = sourceWidth
-          canvas.height = sourceHeight
+          canvas.width = Math.floor(sourceWidth)
+          canvas.height = Math.floor(sourceHeight)
+
+          // Add background if needed
+          if (options.backgroundColor && options.outputFormat !== "png") {
+            ctx.fillStyle = options.backgroundColor
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
 
           ctx.imageSmoothingEnabled = true
           ctx.imageSmoothingQuality = "high"
           ctx.drawImage(
             img,
             sourceX, sourceY, sourceWidth, sourceHeight,
-            0, 0, sourceWidth, sourceHeight
+            0, 0, canvas.width, canvas.height
           )
 
-          const quality = (options.quality || 95) / 100
+          const quality = Math.max(0.1, Math.min(1.0, (options.quality || 95) / 100))
           const mimeType = `image/${options.outputFormat || "png"}`
 
           canvas.toBlob(
@@ -277,7 +350,7 @@ export class RealImageProcessor {
   static async rotateImage(file: File, options: RealImageOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d", { alpha: true })
       if (!ctx) {
         reject(new Error("Canvas not supported"))
         return
@@ -286,16 +359,22 @@ export class RealImageProcessor {
       const img = new Image()
       img.onload = () => {
         try {
-          const angle = (options.customRotation || 0) * Math.PI / 180
+          const angle = ((options.customRotation || 0) % 360) * Math.PI / 180
 
           // Calculate new canvas size after rotation
           const cos = Math.abs(Math.cos(angle))
           const sin = Math.abs(Math.sin(angle))
-          const newWidth = img.naturalWidth * cos + img.naturalHeight * sin
-          const newHeight = img.naturalWidth * sin + img.naturalHeight * cos
+          const newWidth = Math.ceil(img.naturalWidth * cos + img.naturalHeight * sin)
+          const newHeight = Math.ceil(img.naturalWidth * sin + img.naturalHeight * cos)
 
           canvas.width = newWidth
           canvas.height = newHeight
+
+          // Add background if needed
+          if (options.backgroundColor && options.outputFormat !== "png") {
+            ctx.fillStyle = options.backgroundColor
+            ctx.fillRect(0, 0, newWidth, newHeight)
+          }
 
           // Move to center and rotate
           ctx.translate(newWidth / 2, newHeight / 2)
@@ -304,7 +383,7 @@ export class RealImageProcessor {
           ctx.imageSmoothingQuality = "high"
           ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
 
-          const quality = (options.quality || 95) / 100
+          const quality = Math.max(0.1, Math.min(1.0, (options.quality || 95) / 100))
           const mimeType = `image/${options.outputFormat || "png"}`
 
           canvas.toBlob(
@@ -332,7 +411,7 @@ export class RealImageProcessor {
   static async applyFilters(file: File, options: RealImageOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d", { alpha: true })
       if (!ctx) {
         reject(new Error("Canvas not supported"))
         return
@@ -344,21 +423,25 @@ export class RealImageProcessor {
           canvas.width = img.naturalWidth
           canvas.height = img.naturalHeight
 
-          // Build CSS filter string
+          // Build CSS filter string with proper bounds
           const filters = options.filters || {}
           const filterArray = []
 
           if (filters.brightness !== undefined && filters.brightness !== 100) {
-            filterArray.push(`brightness(${filters.brightness}%)`)
+            const brightness = Math.max(0, Math.min(300, filters.brightness))
+            filterArray.push(`brightness(${brightness}%)`)
           }
           if (filters.contrast !== undefined && filters.contrast !== 100) {
-            filterArray.push(`contrast(${filters.contrast}%)`)
+            const contrast = Math.max(0, Math.min(300, filters.contrast))
+            filterArray.push(`contrast(${contrast}%)`)
           }
           if (filters.saturation !== undefined && filters.saturation !== 100) {
-            filterArray.push(`saturate(${filters.saturation}%)`)
+            const saturation = Math.max(0, Math.min(300, filters.saturation))
+            filterArray.push(`saturate(${saturation}%)`)
           }
           if (filters.blur !== undefined && filters.blur > 0) {
-            filterArray.push(`blur(${filters.blur}px)`)
+            const blur = Math.max(0, Math.min(50, filters.blur))
+            filterArray.push(`blur(${blur}px)`)
           }
           if (filters.sepia) {
             filterArray.push("sepia(100%)")
@@ -375,7 +458,7 @@ export class RealImageProcessor {
           ctx.imageSmoothingQuality = "high"
           ctx.drawImage(img, 0, 0)
 
-          const quality = (options.quality || 95) / 100
+          const quality = Math.max(0.1, Math.min(1.0, (options.quality || 95) / 100))
           const mimeType = `image/${options.outputFormat || "png"}`
 
           canvas.toBlob(
@@ -403,7 +486,7 @@ export class RealImageProcessor {
   static async addWatermark(file: File, watermarkText: string, options: RealImageOptions): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      const ctx = canvas.getContext("2d", { alpha: true })
       if (!ctx) {
         reject(new Error("Canvas not supported"))
         return
@@ -422,7 +505,7 @@ export class RealImageProcessor {
           // Add text watermark
           if (watermarkText && !options.watermarkImage) {
             ctx.save()
-            ctx.globalAlpha = options.watermarkOpacity || 0.5
+            ctx.globalAlpha = Math.max(0.1, Math.min(1.0, options.watermarkOpacity || 0.5))
 
             const fontSize = options.fontSize || Math.min(canvas.width, canvas.height) * 0.05
             ctx.font = `bold ${fontSize}px Arial`
@@ -477,7 +560,7 @@ export class RealImageProcessor {
             await this.addImageWatermark(ctx, canvas, options.watermarkImage, options)
           }
 
-          const quality = (options.quality || 95) / 100
+          const quality = Math.max(0.1, Math.min(1.0, (options.quality || 95) / 100))
           const mimeType = `image/${options.outputFormat || "png"}`
 
           canvas.toBlob(
@@ -514,7 +597,7 @@ export class RealImageProcessor {
       watermarkImg.onload = () => {
         try {
           ctx.save()
-          ctx.globalAlpha = options.watermarkOpacity || 0.5
+          ctx.globalAlpha = Math.max(0.1, Math.min(1.0, options.watermarkOpacity || 0.5))
 
           const watermarkSize = Math.min(canvas.width, canvas.height) * 0.2
           let x = canvas.width - watermarkSize - 20

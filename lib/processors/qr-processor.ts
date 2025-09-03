@@ -1,4 +1,4 @@
-import { RealQRProcessor } from "./processors/real-qr-processor"
+import { ProductionQRProcessor } from "./production-qr-processor"
 
 export interface QRCodeOptions {
   width?: number
@@ -45,15 +45,25 @@ export interface QRScanResult {
 
 export class QRProcessor {
   static async generateQRCode(text: string, options: QRCodeOptions = {}): Promise<string> {
+    return ProductionQRProcessor.generateQRCode(text, {
+      width: options.width,
+      margin: options.margin,
+      color: options.color,
+      
+      errorCorrectionLevel: options.errorCorrectionLevel,
+      style: options.style as any
+    })
+  }
+
   static generateWiFiQR(ssid: string, password: string, security: "WPA" | "WEP" | "nopass" = "WPA", hidden = false): string {
-    return RealQRProcessor.generateWiFiQR(ssid, password, security, hidden)
+    return ProductionQRProcessor.generateWiFiQR(ssid, password, security, hidden)
   }
-    return RealQRProcessor.generateQRCode(text, options)
+
   static generateVCardQR(contact: any): string {
-    return RealQRProcessor.generateVCardQR(contact)
+    return ProductionQRProcessor.generateVCardQR(contact)
   }
-  }
+
   static async scanQRCode(imageFile: File): Promise<QRScanResult> {
-    return RealQRProcessor.scanQRCode(imageFile)
+    return ProductionQRProcessor.scanQRCode(imageFile)
   }
 }

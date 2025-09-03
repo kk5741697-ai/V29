@@ -70,7 +70,6 @@ export function QRToolsLayout({
 }: QRToolsLayoutProps) {
   const [qrDataUrl, setQrDataUrl] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
-  const [showUploadArea, setShowUploadArea] = useState(true)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(100)
   
@@ -146,7 +145,6 @@ export function QRToolsLayout({
       
       const qrDataURL = await generateFunction(qrData, qrOptions)
       setQrDataUrl(qrDataURL)
-      setShowUploadArea(false)
     } catch (error) {
       console.error("QR generation failed:", error)
       toast({
@@ -189,7 +187,6 @@ export function QRToolsLayout({
     })
     setQrData(defaultData)
     setQrDataUrl("")
-    setShowUploadArea(true)
     setIsMobileSidebarOpen(false)
     setLogoFile(null)
   }
@@ -403,7 +400,7 @@ export function QRToolsLayout({
           </div>
         </ScrollArea>
         
-        {/* Mobile Footer - Fixed to prevent reopening */}
+        {/* Mobile Footer */}
         <div className="p-4 border-t bg-white space-y-3 flex-shrink-0">
           <Button 
             onClick={generateQRCode}
@@ -439,57 +436,7 @@ export function QRToolsLayout({
     </Sheet>
   )
 
-  // Show upload area if no QR generated
-  if (showUploadArea && !qrDataUrl) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        
-        <div className="bg-white border-b">
-          <div className="container mx-auto px-4 py-2 lg:py-3">
-            <AdBanner 
-              adSlot="tool-header-banner"
-              adFormat="auto"
-              className="max-w-4xl mx-auto"
-            />
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-6 lg:py-8">
-          <div className="text-center mb-6 lg:mb-8">
-            <div className="inline-flex items-center space-x-2 mb-4">
-              <Icon className="h-6 w-6 lg:h-8 lg:w-8 text-blue-600" />
-              <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">{title}</h1>
-            </div>
-            <p className="text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto px-4">{description}</p>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <div className="border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-500 p-8 lg:p-16">
-              <div className="relative mb-4 lg:mb-6">
-                <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl"></div>
-                <Icon className="relative h-16 w-16 lg:h-20 lg:w-20 text-blue-500" />
-              </div>
-              <h3 className="text-xl lg:text-2xl font-semibold mb-2 lg:mb-3 text-gray-700">Configure {qrType}</h3>
-              <p className="text-gray-500 mb-4 lg:mb-6 text-base lg:text-lg text-center">Enter details to generate QR code</p>
-              <Button 
-                onClick={() => setIsMobileSidebarOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 lg:px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <Settings className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
-                Configure {qrType}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <Footer />
-        <MobileSidebar />
-      </div>
-    )
-  }
-
-  // QR Code interface
+  // Direct QR Code interface - no upload area
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -517,6 +464,17 @@ export function QRToolsLayout({
               <a href="/barcode-generator">Barcode</a>
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Top Ad Banner */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-2 lg:py-3">
+          <AdBanner 
+            adSlot="tool-header-banner"
+            adFormat="auto"
+            className="max-w-4xl mx-auto"
+          />
         </div>
       </div>
 
@@ -549,11 +507,12 @@ export function QRToolsLayout({
             <CardContent>
               {qrDataUrl ? (
                 <div className="relative">
-                  <div className="qr-preview-container p-4 rounded-lg">
+                  <div className="bg-white p-4 rounded-lg border">
                     <img
                       src={qrDataUrl}
                       alt={`${title} QR Code`}
-                      className="w-full h-auto object-contain border rounded"
+                      className="w-full h-auto object-contain max-w-full max-h-[400px] mx-auto"
+                      style={{ imageRendering: 'pixelated' }}
                     />
                   </div>
                   <div className="mt-2 text-xs text-gray-500 text-center">
@@ -567,7 +526,7 @@ export function QRToolsLayout({
                 <div className="aspect-square bg-gray-100 rounded border flex items-center justify-center">
                   <div className="text-center text-gray-500">
                     <QrCode className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">QR code will appear here</p>
+                    <p className="text-sm">Configure {qrType.toLowerCase()} to generate QR code</p>
                   </div>
                 </div>
               )}
@@ -647,14 +606,15 @@ export function QRToolsLayout({
           <div className="flex-1 overflow-hidden flex items-center justify-center p-6">
             {qrDataUrl ? (
               <div className="relative max-w-full max-h-full">
-                <div className="qr-preview-container p-8 rounded-lg">
+                <div className="bg-white p-8 rounded-lg border shadow-lg">
                   <img
                     src={qrDataUrl}
                     alt={`${title} QR Code`}
-                    className="max-w-full max-h-[70vh] object-contain border border-gray-300 rounded-lg shadow-lg bg-white"
+                    className="max-w-full max-h-[70vh] object-contain mx-auto"
                     style={{ 
                       transform: `scale(${Math.min(zoomLevel / 100, 1)})`,
-                      transition: "transform 0.2s ease"
+                      transition: "transform 0.2s ease",
+                      imageRendering: 'pixelated'
                     }}
                   />
                 </div>
@@ -929,6 +889,8 @@ export function QRToolsLayout({
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   )
 }
