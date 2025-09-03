@@ -22,10 +22,10 @@ const convertOptions = [
     type: "select" as const,
     defaultValue: "docx",
     selectOptions: [
-      { value: "docx", label: "Word Document (.docx)" },
-      { value: "doc", label: "Word 97-2003 (.doc)" },
-      { value: "rtf", label: "Rich Text Format (.rtf)" },
       { value: "txt", label: "Plain Text (.txt)" },
+      { value: "docx", label: "Word Document (.docx) - Premium" },
+      { value: "doc", label: "Word 97-2003 (.doc) - Premium" },
+      { value: "rtf", label: "Rich Text Format (.rtf) - Premium" },
     ],
     section: "Output",
   },
@@ -81,10 +81,10 @@ async function convertPDFToWord(files: any[], options: any) {
       }
     }
 
-    if (options.conversionMode === "ocr") {
+    if (options.conversionMode === "ocr" || options.outputFormat !== "txt") {
       return {
         success: false,
-        error: "OCR conversion requires Premium subscription. Please upgrade to access this feature.",
+        error: "Advanced conversion formats require Premium subscription. Free users can convert to plain text (.txt) only.",
       }
     }
 
@@ -94,21 +94,21 @@ async function convertPDFToWord(files: any[], options: any) {
       preserveImages: options.preserveImages,
       preserveFormatting: options.preserveFormatting,
       language: options.language,
+      conversionMode: options.conversionMode,
     }
 
     if (files.length === 1) {
       // Single file conversion
       const convertedBytes = await PDFProcessor.pdfToWord(files[0].originalFile || files[0].file, conversionOptions)
       const blob = new Blob([convertedBytes], { 
-        type: options.outputFormat === "docx" 
-          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          : "application/msword"
+        type: "text/plain"
       })
       const downloadUrl = URL.createObjectURL(blob)
 
       return {
         success: true,
         downloadUrl,
+        filename: `${files[0].name.replace(".pdf", "")}.${options.outputFormat || "txt"}`
       }
     } else {
       // Multiple files - create ZIP
@@ -127,6 +127,7 @@ async function convertPDFToWord(files: any[], options: any) {
       return {
         success: true,
         downloadUrl,
+        filename: "converted_documents.zip"
       }
     }
   } catch (error) {

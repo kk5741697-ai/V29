@@ -203,7 +203,7 @@ function validateJson(input: string) {
   }
 }
 
-export default function JsonToTomlPage() {
+export default function JsonToTomlConverterPage() {
   return (
     <TextToolLayout
       title="JSON to TOML Converter"

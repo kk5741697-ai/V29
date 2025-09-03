@@ -16,18 +16,38 @@ const flipOptions = [
       { value: "both", label: "Both Directions" },
     ],
   },
+  {
+    key: "outputFormat",
+    label: "Output Format",
+    type: "select" as const,
+    defaultValue: "png",
+    selectOptions: [
+      { value: "jpeg", label: "JPEG" },
+      { value: "png", label: "PNG" },
+      { value: "webp", label: "WebP" },
+    ],
+  },
+  {
+    key: "quality",
+    label: "Quality",
+    type: "slider" as const,
+    defaultValue: 95,
+    min: 10,
+    max: 100,
+    step: 5,
+  },
 ]
 
 async function flipImages(files: any[], options: any) {
   try {
     const processedFiles = await Promise.all(
       files.map(async (file) => {
-        const processedBlob = await ImageProcessor.rotateImage(
+        const processedBlob = await ImageProcessor.flipImage(
           file.originalFile || file.file,
           {
-            customRotation: 0, // No rotation, just flipping
+            flipDirection: options.flipDirection,
             outputFormat: options.outputFormat || "png",
-            quality: 90,
+            quality: options.quality || 95,
             backgroundColor: "#ffffff"
           }
         )
@@ -35,7 +55,7 @@ async function flipImages(files: any[], options: any) {
         const processedUrl = URL.createObjectURL(processedBlob)
         
         const baseName = file.name.split(".")[0]
-        const newName = `${baseName}_flipped.png`
+        const newName = `${baseName}_flipped.${options.outputFormat || "png"}`
 
         return {
           ...file,

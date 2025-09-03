@@ -31,6 +31,17 @@ const resizeOptions = [
     section: "Dimensions",
   },
   {
+    key: "resizeMode",
+    label: "Resize Mode",
+    type: "select" as const,
+    defaultValue: "pixels",
+    selectOptions: [
+      { value: "pixels", label: "Pixels" },
+      { value: "percentage", label: "Percentage" },
+    ],
+    section: "Dimensions",
+  },
+  {
     key: "outputFormat",
     label: "Output Format",
     type: "select" as const,
@@ -61,6 +72,8 @@ const resizePresets = [
   { name: "Twitter Header", values: { width: 1500, height: 500, maintainAspectRatio: false } },
   { name: "LinkedIn Post", values: { width: 1200, height: 627, maintainAspectRatio: false } },
   { name: "50% Scale", values: { resizeMode: "percentage", width: 50, height: 50 } },
+  { name: "25% Scale", values: { resizeMode: "percentage", width: 25, height: 25 } },
+  { name: "200% Scale", values: { resizeMode: "percentage", width: 200, height: 200 } },
 ]
 
 async function resizeImages(files: any[], options: any) {
@@ -97,7 +110,7 @@ async function resizeImages(files: any[], options: any) {
         const processedUrl = URL.createObjectURL(processedBlob)
         
         const baseName = file.name.split(".")[0]
-        const newName = `${baseName}_resized.png`
+        const newName = `${baseName}_resized.${options.outputFormat || "png"}`
 
         return {
           ...file,

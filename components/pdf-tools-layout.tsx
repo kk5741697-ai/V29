@@ -112,6 +112,15 @@ export function PDFToolsLayout({
         continue
       }
 
+      if (file.size > 100 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 100MB. Please use a smaller file.`,
+          variant: "destructive"
+        })
+        continue
+      }
+
       if (files.length + newFiles.length >= maxFiles) {
         toast({
           title: "Too many files",

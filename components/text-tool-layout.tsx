@@ -132,6 +132,11 @@ export function TextToolLayout({
         setError(validation.error || "Invalid input")
         setOutput("")
         setStats(null)
+        toast({
+          title: "Validation failed",
+          description: validation.error || "Invalid input",
+          variant: "destructive"
+        })
         return
       }
     }
@@ -141,10 +146,22 @@ export function TextToolLayout({
       setOutput(result.output)
       setError(result.error || "")
       setStats(result.stats)
+      
+      if (result.output && !result.error) {
+        toast({
+          title: "Processing complete",
+          description: "Text processed successfully"
+        })
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "Processing failed")
       setOutput("")
       setStats(null)
+      toast({
+        title: "Processing failed",
+        description: error instanceof Error ? error.message : "Processing failed",
+        variant: "destructive"
+      })
     }
   }
 

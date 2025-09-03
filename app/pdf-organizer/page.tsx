@@ -16,18 +16,21 @@ const organizeOptions = [
       { value: "odd", label: "Odd Pages First" },
       { value: "even", label: "Even Pages First" },
     ],
+    section: "Organization",
   },
   {
     key: "removeBlankPages",
     label: "Remove Blank Pages",
     type: "checkbox" as const,
     defaultValue: false,
+    section: "Cleanup",
   },
   {
     key: "addPageNumbers",
     label: "Add Page Numbers",
     type: "checkbox" as const,
     defaultValue: false,
+    section: "Enhancement",
   },
   {
     key: "pageNumberPosition",
@@ -43,6 +46,7 @@ const organizeOptions = [
       { value: "bottom-right", label: "Bottom Right" },
     ],
     condition: (options) => options.addPageNumbers,
+    section: "Enhancement",
   },
 ]
 
@@ -57,7 +61,11 @@ async function organizePDF(files: any[], options: any) {
 
     const file = files[0]
     
-    const organizedResults = await PDFProcessor.splitPDF(file.originalFile || file.file, [], {
+    // For organization, we need to get all pages first
+    const pdfInfo = await PDFProcessor.getPDFInfo(file.originalFile || file.file)
+    const allPages = pdfInfo.pages.map(page => `${file.id}-page-${page.pageNumber}`)
+    
+    const organizedResults = await PDFProcessor.splitPDF(file.originalFile || file.file, allPages, {
       ...options,
       extractMode: "all"
     })
@@ -69,7 +77,7 @@ async function organizePDF(files: any[], options: any) {
 
     const finalBytes = await PDFProcessor.mergePDFs(tempFiles, {
       addBookmarks: false,
-      preserveMetadata: options.preserveMetadata
+      preserveMetadata: true
     })
 
     const blob = new Blob([finalBytes], { type: "application/pdf" })
@@ -78,6 +86,7 @@ async function organizePDF(files: any[], options: any) {
     return {
       success: true,
       downloadUrl,
+      filename: `organized_${file.name}`
     }
   } catch (error) {
     return {

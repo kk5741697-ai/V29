@@ -77,7 +77,16 @@ async function splitPDF(files: any[], options: any) {
       }
     }
     
-    // Convert selected page keys to page numbers
+    const splitResults = await PDFProcessor.splitPDF(
+      file.originalFile || file.file, 
+      selectedPages,
+      { 
+        ...options,
+        preserveMetadata: options.preserveMetadata || true
+      }
+    )
+
+    // Convert selected page keys to page numbers for filename
     const pageNumbers = selectedPages
       .map((pageKey: string) => {
         const parts = pageKey.split('-')
@@ -85,22 +94,6 @@ async function splitPDF(files: any[], options: any) {
       })
       .filter((num: number) => !isNaN(num))
       .sort((a: number, b: number) => a - b)
-    
-    if (pageNumbers.length === 0) {
-      return {
-        success: false,
-        error: "No valid pages selected",
-      }
-    }
-    
-    // Create page ranges from selected pages
-    const pageRanges = pageNumbers.map(pageNum => ({ from: pageNum, to: pageNum }))
-    
-    const splitResults = await PDFProcessor.splitPDF(
-      file.originalFile || file.file, 
-      selectedPages,
-      { ...options }
-    )
 
     if (splitResults.length === 1) {
       // Single file - direct download

@@ -56,6 +56,20 @@ const converterTools = [
     icon: Shuffle,
     category: "Converters",
   },
+  {
+    title: "JSON to TOML",
+    description: "Convert JSON data to TOML format with proper formatting and validation.",
+    href: "/json-to-toml",
+    icon: Shuffle,
+    category: "Converters",
+  },
+  {
+    title: "SCSS to SASS",
+    description: "Convert SCSS (Sassy CSS) to SASS indented syntax format.",
+    href: "/scss-to-sass",
+    icon: Shuffle,
+    category: "Converters",
+  },
 ]
 
 export default function ConvertersPage() {

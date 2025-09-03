@@ -61,12 +61,28 @@ const nextConfig = {
       fs: false,
       path: false,
       crypto: false,
+      canvas: false,
     }
     
     // Handle canvas and other browser-only modules
     if (isServer) {
       config.externals = config.externals || []
-      config.externals.push('canvas')
+      config.externals.push('canvas', 'jsdom')
+    }
+    
+    // Optimize bundle size
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+        },
+      },
     }
     
     return config

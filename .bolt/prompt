@@ -21,6 +21,10 @@ also in the qr code layout will be buttons for all type of qr code tools.
 
 and also the pdf tools will be use pdf.js package. current pdf are getting attached page preview and downloaded output.
 
+make sure all tools are working as expected, not wrong way. eg: all tools behavior, option panel all options, outside option panel all options, all tools are giving expected behoviour, eg: suppose image tools not giving pdf output or pdf input, like this, you need to sure all the behiviour.
+
+also again verify the layout, processors, packages, libraries, etc are working and also update them for more better work.
+
 
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4755003409431265"
      crossorigin="anonymous"></script>

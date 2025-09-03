@@ -10,36 +10,42 @@ const protectOptions = [
     label: "User Password",
     type: "text" as const,
     defaultValue: "",
+    section: "Passwords",
   },
   {
     key: "ownerPassword",
     label: "Owner Password",
     type: "text" as const,
     defaultValue: "",
+    section: "Passwords",
   },
   {
     key: "allowPrinting",
     label: "Allow Printing",
     type: "checkbox" as const,
     defaultValue: true,
+    section: "Permissions",
   },
   {
     key: "allowCopying",
     label: "Allow Copying",
     type: "checkbox" as const,
     defaultValue: false,
+    section: "Permissions",
   },
   {
     key: "allowModifying",
     label: "Allow Modifying",
     type: "checkbox" as const,
     defaultValue: false,
+    section: "Permissions",
   },
   {
     key: "allowAnnotations",
     label: "Allow Annotations",
     type: "checkbox" as const,
     defaultValue: true,
+    section: "Permissions",
   },
   {
     key: "encryptionLevel",
@@ -51,6 +57,7 @@ const protectOptions = [
       { value: "128", label: "128-bit RC4 (Standard)" },
       { value: "256", label: "256-bit AES (High Security)" },
     ],
+    section: "Security",
   },
 ]
 

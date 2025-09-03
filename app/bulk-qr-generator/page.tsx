@@ -106,6 +106,10 @@ export default function BulkQRGeneratorPage() {
         } catch (error) {
           console.error(`Failed to generate QR for item ${i + 1}:`, error)
           // Continue with other items instead of stopping
+          toast({
+            title: "QR generation failed",
+            description: `Failed to generate QR code for item ${i + 1}: ${item.content.substring(0, 30)}...`,
+          })
         }
         
         setProgress(((i + 1) / data.length) * 100)

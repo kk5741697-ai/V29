@@ -16,6 +16,21 @@ const convertOptions = [
       { value: "webp", label: "WebP" },
     ],
   },
+  {
+    key: "quality",
+    label: "Quality",
+    type: "slider" as const,
+    defaultValue: 90,
+    min: 10,
+    max: 100,
+    step: 5,
+  },
+  {
+    key: "backgroundColor",
+    label: "Background Color (for JPEG)",
+    type: "color" as const,
+    defaultValue: "#ffffff",
+  },
 ]
 
 async function convertImages(files: any[], options: any) {
@@ -34,8 +49,8 @@ async function convertImages(files: any[], options: any) {
           file.originalFile || file.file,
           options.outputFormat as "jpeg" | "png" | "webp",
           {
-            quality: 90,
-            backgroundColor: "#ffffff"
+            quality: options.quality || 90,
+            backgroundColor: options.backgroundColor || "#ffffff"
           }
         )
 

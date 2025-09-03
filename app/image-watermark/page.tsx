@@ -10,12 +10,14 @@ const watermarkOptions = [
     label: "Watermark Text",
     type: "text" as const,
     defaultValue: "© Your Brand",
+    section: "Watermark Content",
   },
   {
     key: "useImageWatermark",
     label: "Use Image Watermark",
     type: "checkbox" as const,
     defaultValue: false,
+    section: "Watermark Content",
   },
   {
     key: "watermarkImage",
@@ -23,6 +25,7 @@ const watermarkOptions = [
     type: "file" as const,
     defaultValue: null,
     condition: (options) => options.useImageWatermark,
+    section: "Watermark Content",
   },
   {
     key: "fontSize",
@@ -33,6 +36,7 @@ const watermarkOptions = [
     max: 120,
     step: 5,
     condition: (options) => !options.useImageWatermark,
+    section: "Text Settings",
   },
   {
     key: "opacity",
@@ -42,6 +46,7 @@ const watermarkOptions = [
     min: 10,
     max: 100,
     step: 5,
+    section: "Appearance",
   },
   {
     key: "position",
@@ -56,6 +61,7 @@ const watermarkOptions = [
       { value: "bottom-right", label: "Bottom Right" },
       { value: "diagonal", label: "Diagonal" },
     ],
+    section: "Appearance",
   },
   {
     key: "textColor",
@@ -63,6 +69,29 @@ const watermarkOptions = [
     type: "color" as const,
     defaultValue: "#ffffff",
     condition: (options) => !options.useImageWatermark,
+    section: "Text Settings",
+  },
+  {
+    key: "outputFormat",
+    label: "Output Format",
+    type: "select" as const,
+    defaultValue: "png",
+    selectOptions: [
+      { value: "jpeg", label: "JPEG" },
+      { value: "png", label: "PNG" },
+      { value: "webp", label: "WebP" },
+    ],
+    section: "Output",
+  },
+  {
+    key: "quality",
+    label: "Quality",
+    type: "slider" as const,
+    defaultValue: 95,
+    min: 10,
+    max: 100,
+    step: 5,
+    section: "Output",
   },
 ]
 
@@ -77,34 +106,32 @@ async function addWatermarkToImages(files: any[], options: any) {
 
     const processedFiles = await Promise.all(
       files.map(async (file) => {
-        const watermarkOptions = {
-          watermarkOpacity: options.opacity / 100,
-          outputFormat: "png",
-          position: options.position,
-          textColor: options.textColor,
-          fontSize: options.fontSize,
-          useImageWatermark: options.useImageWatermark,
-          watermarkImageUrl: options.watermarkImageUrl,
-          watermarkImage: options.useImageWatermark ? options.watermarkImageUrl : undefined,
-        }
-        
         const processedBlob = await ImageProcessor.addWatermark(
           file.originalFile || file.file, 
           options.watermarkText, 
-          watermarkOptions
+          {
+            watermarkOpacity: options.opacity / 100,
+            outputFormat: options.outputFormat || "png",
+            position: options.position,
+            textColor: options.textColor,
+            fontSize: options.fontSize,
+            watermarkImage: options.useImageWatermark ? options.watermarkImage : undefined,
+            quality: options.quality || 95,
+            backgroundColor: "#ffffff"
+          }
         )
 
         const processedUrl = URL.createObjectURL(processedBlob)
         
         const baseName = file.name.split(".")[0]
-        const newName = `${baseName}_watermarked.png`
+        const newName = `${baseName}_watermarked.${options.outputFormat || "png"}`
 
         return {
           ...file,
           processed: true,
           processedPreview: processedUrl,
           name: newName,
-          size: processedBlob.size,
+          processedSize: processedBlob.size,
           blob: processedBlob
         }
       }),

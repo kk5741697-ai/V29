@@ -9,7 +9,7 @@ const convertOptions = [
     key: "outputFormat",
     label: "Output Format",
     type: "select" as const,
-    defaultValue: "jpg",
+    defaultValue: "png",
     selectOptions: [
       { value: "jpeg", label: "JPEG" },
       { value: "png", label: "PNG" },
@@ -42,6 +42,16 @@ const convertOptions = [
     ],
     section: "Quality",
   },
+  {
+    key: "quality",
+    label: "Image Quality",
+    type: "slider" as const,
+    defaultValue: 90,
+    min: 10,
+    max: 100,
+    step: 5,
+    section: "Quality",
+  },
 ]
 
 async function convertPDFToImage(files: any[], options: any) {
@@ -56,8 +66,8 @@ async function convertPDFToImage(files: any[], options: any) {
     const conversionOptions = {
       dpi: Number.parseInt(options.resolution),
       outputFormat: options.outputFormat,
-      quality: 90,
-      colorMode: options.colorMode
+      quality: options.quality || 90,
+      colorMode: options.colorMode || "color"
     }
 
     // Always create ZIP with all images
@@ -65,7 +75,7 @@ async function convertPDFToImage(files: any[], options: any) {
     const zip = new JSZip()
 
     for (const file of files) {
-      const images = await PDFProcessor.pdfToImages(file.file, conversionOptions)
+      const images = await PDFProcessor.pdfToImages(file.originalFile || file.file, conversionOptions)
 
       images.forEach((imageBlob, pageIndex) => {
         const filename = `${file.name.replace(".pdf", "")}_page_${pageIndex + 1}.${options.outputFormat}`

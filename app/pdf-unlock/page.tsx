@@ -10,18 +10,21 @@ const unlockOptions = [
     label: "PDF Password",
     type: "text" as const,
     defaultValue: "",
+    section: "Authentication",
   },
   {
     key: "removeRestrictions",
     label: "Remove All Restrictions",
     type: "checkbox" as const,
     defaultValue: true,
+    section: "Options",
   },
   {
     key: "preserveMetadata",
     label: "Preserve Metadata",
     type: "checkbox" as const,
     defaultValue: true,
+    section: "Options",
   },
 ]
 
@@ -41,10 +44,11 @@ async function unlockPDF(files: any[], options: any) {
       }
     }
 
-    // Simulate PDF unlocking process
-    const unlockedBytes = await PDFProcessor.compressPDF(files[0].file, {
-      quality: 100,
-      compressionLevel: "low"
+    // Note: This is a simulation - real PDF unlocking requires the actual password
+    const unlockedBytes = await PDFProcessor.compressPDF(files[0].originalFile || files[0].file, {
+      compressionLevel: "low",
+      removeMetadata: false,
+      preserveMetadata: options.preserveMetadata
     })
 
     const blob = new Blob([unlockedBytes], { type: "application/pdf" })
@@ -53,6 +57,7 @@ async function unlockPDF(files: any[], options: any) {
     return {
       success: true,
       downloadUrl,
+      filename: `unlocked_${files[0].name}`
     }
   } catch (error) {
     return {

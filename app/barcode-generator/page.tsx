@@ -26,6 +26,7 @@ export default function BarcodeGeneratorPage() {
   const [backgroundColor, setBackgroundColor] = useState("#ffffff")
   const [lineColor, setLineColor] = useState("#000000")
   const [barcodeDataUrl, setBarcodeDataUrl] = useState("")
+  const [outputFormat, setOutputFormat] = useState("png")
 
   const barcodeTypes = [
     { value: "CODE128", label: "Code 128", description: "Most versatile, supports all ASCII characters" },
@@ -40,39 +41,33 @@ export default function BarcodeGeneratorPage() {
   ]
 
   useEffect(() => {
-    generateBarcode()
+    const generateAsync = async () => {
+      try {
+        const dataUrl = await BarcodeProcessor.generateBarcode(content, barcodeType, barcodeOptions)
+        setBarcodeDataUrl(dataUrl)
+      } catch (error) {
+        console.error("Barcode generation failed:", error)
+        setBarcodeDataUrl("")
+        toast({
+          title: "Barcode generation failed",
+          description: error instanceof Error ? error.message : "Please check your input and try again",
+          variant: "destructive"
+        })
+      }
+    }
+    generateAsync()
   }, [content, barcodeType, width, height, displayValue, fontSize, backgroundColor, lineColor, textAlign, textPosition])
 
-  const generateBarcode = async () => {
-    try {
-      if (!content.trim()) {
-        setBarcodeDataUrl("")
-        return
-      }
-
-      const barcodeOptions = {
-        width,
-        height,
-        displayValue,
-        fontSize,
-        textAlign: textAlign as "left" | "center" | "right",
-        textPosition: textPosition as "top" | "bottom",
-        backgroundColor,
-        lineColor,
-        margin: 20
-      }
-
-      const dataUrl = await BarcodeProcessor.generateBarcode(content, barcodeType, barcodeOptions)
-      setBarcodeDataUrl(dataUrl)
-    } catch (error) {
-      console.error("Barcode generation failed:", error)
-      setBarcodeDataUrl("")
-      toast({
-        title: "Barcode generation failed",
-        description: error instanceof Error ? error.message : "Please check your input and try again",
-        variant: "destructive"
-      })
-    }
+  const barcodeOptions = {
+    width,
+    height,
+    displayValue,
+    fontSize,
+    textAlign: textAlign as "left" | "center" | "right",
+    textPosition: textPosition as "top" | "bottom",
+    backgroundColor,
+    lineColor,
+    margin: 20
   }
 
   const downloadBarcode = (format: string) => {
@@ -86,13 +81,13 @@ export default function BarcodeGeneratorPage() {
     }
 
     const link = document.createElement("a")
-    link.download = `barcode.${format}`
+    link.download = `barcode.${format || outputFormat}`
     link.href = barcodeDataUrl
     link.click()
 
     toast({
       title: "Download started",
-      description: `Barcode downloaded as ${format.toUpperCase()}`
+      description: `Barcode downloaded as ${(format || outputFormat).toUpperCase()}`
     })
   }
 
@@ -252,6 +247,20 @@ export default function BarcodeGeneratorPage() {
               <CardDescription>Adjust barcode appearance and formatting</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="output-format">Output Format</Label>
+                <Select value={outputFormat} onValueChange={setOutputFormat}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="png">PNG</SelectItem>
+                    <SelectItem value="svg">SVG</SelectItem>
+                    <SelectItem value="jpeg">JPEG</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="width">Bar Width</Label>

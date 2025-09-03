@@ -247,7 +247,7 @@ function validateScss(input: string) {
   return { isValid: true }
 }
 
-export default function ScssToSassPage() {
+export default function ScssToSassConverterPage() {
   return (
     <TextToolLayout
       title="SCSS to SASS"

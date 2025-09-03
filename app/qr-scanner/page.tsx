@@ -76,11 +76,16 @@ export default function QRScannerPage() {
     if (data.startsWith("http://") || data.startsWith("https://")) {
       return { data, type: "URL" }
     } else if (data.startsWith("mailto:")) {
+      const urlParams = new URLSearchParams(data.split("?")[1] || "")
       const email = data.replace("mailto:", "").split("?")[0]
       return { 
         data, 
         type: "EMAIL", 
-        formatted: { email, subject: "", body: "" }
+        formatted: { 
+          email, 
+          subject: urlParams.get("subject") || "", 
+          body: urlParams.get("body") || "" 
+        }
       }
     } else if (data.startsWith("tel:")) {
       const phone = data.replace("tel:", "")

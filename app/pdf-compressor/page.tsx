@@ -32,6 +32,13 @@ const compressOptions = [
     defaultValue: false,
     section: "Options",
   },
+  {
+    key: "preserveQuality",
+    label: "Preserve Quality",
+    type: "checkbox" as const,
+    defaultValue: true,
+    section: "Options",
+  },
 ]
 
 async function compressPDF(files: any[], options: any) {
@@ -44,9 +51,10 @@ async function compressPDF(files: any[], options: any) {
     }
 
     const compressionOptions = {
-      compressionLevel: options.compressionLevel,
+      compressionLevel: options.compressionLevel === "extreme" ? "maximum" : options.compressionLevel,
       optimizeImages: Boolean(options.optimizeImages),
       removeMetadata: Boolean(options.removeMetadata),
+      quality: options.preserveQuality ? 95 : 75,
     }
 
     if (files.length === 1) {

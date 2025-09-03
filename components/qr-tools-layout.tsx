@@ -111,6 +111,11 @@ export function QRToolsLayout({
       const validation = validateFunction(qrData)
       if (!validation.isValid) {
         setQrDataUrl("")
+        toast({
+          title: "Validation failed",
+          description: validation.error || "Please check your input",
+          variant: "destructive"
+        })
         return
       }
     }
@@ -133,18 +138,15 @@ export function QRToolsLayout({
         margin,
         color: { dark: darkColor, light: lightColor },
         errorCorrectionLevel: errorCorrection as any,
-        style: {
-          shape: qrStyle as any,
-          eyeShape: eyeStyle as any,
-        },
-        logo: logoFile ? {
-          file: logoFile,
-          size: logoSize,
-        } : undefined
       }
       
       const qrDataURL = await generateFunction(qrData, qrOptions)
       setQrDataUrl(qrDataURL)
+      
+      toast({
+        title: "QR Code generated",
+        description: "QR code created successfully"
+      })
     } catch (error) {
       console.error("QR generation failed:", error)
       toast({

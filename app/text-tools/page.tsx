@@ -77,6 +77,20 @@ const textTools = [
     icon: FileText,
     category: "Text Tools",
   },
+  {
+    title: "JSON to TOML Converter",
+    description: "Convert JSON data to TOML format with proper formatting and validation.",
+    href: "/json-to-toml",
+    icon: FileText,
+    category: "Text Tools",
+  },
+  {
+    title: "SCSS to SASS Converter",
+    description: "Convert SCSS (Sassy CSS) to SASS indented syntax format.",
+    href: "/scss-to-sass",
+    icon: FileText,
+    category: "Text Tools",
+  },
 ]
 
 export default function TextToolsPage() {

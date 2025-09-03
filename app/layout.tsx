@@ -123,6 +123,21 @@ export default function RootLayout({
                 }
               });
               
+              // Enhanced file processing error handling
+              window.addEventListener('unhandledrejection', function(e) {
+                if (e.reason && e.reason.message && e.reason.message.includes('Canvas')) {
+                  console.warn('Canvas error detected, cleaning up...');
+                  // Clean up canvases
+                  const canvases = document.querySelectorAll('canvas');
+                  canvases.forEach(canvas => {
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                      ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                  });
+                }
+              });
+              
               // Prevent navigation during processing
               let isProcessing = false;
               document.addEventListener('click', function(e) {

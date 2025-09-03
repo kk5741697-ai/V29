@@ -6,6 +6,18 @@ import { ImageProcessor } from "@/lib/processors/image-processor"
 
 const rotateOptions = [
   {
+    key: "rotation",
+    label: "Quick Rotation",
+    type: "select" as const,
+    defaultValue: "",
+    selectOptions: [
+      { value: "", label: "Custom Angle" },
+      { value: "90", label: "90° Clockwise" },
+      { value: "180", label: "180° Flip" },
+      { value: "270", label: "270° Clockwise" },
+    ],
+  },
+  {
     key: "customAngle",
     label: "Custom Angle (degrees)",
     type: "slider" as const,
@@ -13,6 +25,26 @@ const rotateOptions = [
     min: -180,
     max: 180,
     step: 1,
+  },
+  {
+    key: "outputFormat",
+    label: "Output Format",
+    type: "select" as const,
+    defaultValue: "png",
+    selectOptions: [
+      { value: "jpeg", label: "JPEG" },
+      { value: "png", label: "PNG" },
+      { value: "webp", label: "WebP" },
+    ],
+  },
+  {
+    key: "quality",
+    label: "Quality",
+    type: "slider" as const,
+    defaultValue: 95,
+    min: 10,
+    max: 100,
+    step: 5,
   },
 ]
 
@@ -32,14 +64,14 @@ async function rotateImages(files: any[], options: any) {
         const processedBlob = await ImageProcessor.rotateImage(file.originalFile || file.file, {
           customRotation: angle,
           outputFormat: options.outputFormat || "png",
-          quality: 90,
+          quality: options.quality || 95,
           backgroundColor: "#ffffff"
         })
 
         const processedUrl = URL.createObjectURL(processedBlob)
         
         const baseName = file.name.split(".")[0]
-        const newName = `${baseName}_rotated.png`
+        const newName = `${baseName}_rotated.${options.outputFormat || "png"}`
         
         // Calculate new dimensions for 90° and 270° rotations
         const shouldSwapDimensions = Math.abs(angle) === 90 || Math.abs(angle) === 270

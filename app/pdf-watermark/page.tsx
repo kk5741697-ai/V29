@@ -10,6 +10,7 @@ const watermarkOptions = [
     label: "Watermark Text",
     type: "text" as const,
     defaultValue: "CONFIDENTIAL",
+    section: "Watermark",
   },
   {
     key: "opacity",
@@ -19,6 +20,7 @@ const watermarkOptions = [
     min: 10,
     max: 100,
     step: 5,
+    section: "Appearance",
   },
   {
     key: "fontSize",
@@ -28,6 +30,7 @@ const watermarkOptions = [
     min: 12,
     max: 120,
     step: 4,
+    section: "Appearance",
   },
   {
     key: "position",
@@ -42,6 +45,7 @@ const watermarkOptions = [
       { value: "bottom-left", label: "Bottom Left" },
       { value: "bottom-right", label: "Bottom Right" },
     ],
+    section: "Appearance",
   },
   {
     key: "color",
@@ -54,6 +58,7 @@ const watermarkOptions = [
       { value: "blue", label: "Blue" },
       { value: "black", label: "Black" },
     ],
+    section: "Appearance",
   },
 ]
 

@@ -518,6 +518,74 @@ export class ImageProcessor {
     })
   }
 
+  static async flipImage(file: File, options: ImageProcessingOptions): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d", { alpha: true })
+      if (!ctx) {
+        reject(new Error("Canvas not supported"))
+        return
+      }
+
+      const img = new Image()
+      img.onload = () => {
+        try {
+          canvas.width = img.naturalWidth
+          canvas.height = img.naturalHeight
+
+          if (options.backgroundColor && options.outputFormat !== "png") {
+            ctx.fillStyle = options.backgroundColor
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
+
+          ctx.save()
+          
+          // Apply flipping based on direction
+          switch (options.flipDirection) {
+            case "horizontal":
+              ctx.translate(canvas.width, 0)
+              ctx.scale(-1, 1)
+              break
+            case "vertical":
+              ctx.translate(0, canvas.height)
+              ctx.scale(1, -1)
+              break
+            case "both":
+              ctx.translate(canvas.width, canvas.height)
+              ctx.scale(-1, -1)
+              break
+          }
+
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = "high"
+          ctx.drawImage(img, 0, 0)
+          ctx.restore()
+
+          const quality = Math.max(0.1, Math.min(1.0, (options.quality || 95) / 100))
+          const mimeType = `image/${options.outputFormat || "png"}`
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob)
+              } else {
+                reject(new Error("Failed to create blob"))
+              }
+            },
+            mimeType,
+            quality
+          )
+        } catch (error) {
+          reject(error)
+        }
+      }
+
+      img.onerror = () => reject(new Error("Failed to load image"))
+      img.crossOrigin = "anonymous"
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   private static async addImageWatermark(
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,

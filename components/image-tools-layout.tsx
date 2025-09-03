@@ -163,7 +163,6 @@ export function ImageToolsLayout({
           toast({
             title: "Image resolution too high",
             description: `${file.name} has very high resolution. This may cause processing issues.`,
-            variant: "destructive"
           })
         }
         

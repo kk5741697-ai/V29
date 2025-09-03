@@ -30,12 +30,18 @@ const compressionOptions = [
     key: "outputFormat",
     label: "Output Format",
     type: "select" as const,
-    defaultValue: "jpeg",
+    defaultValue: "webp",
     selectOptions: [
       { value: "jpeg", label: "JPEG" },
       { value: "png", label: "PNG" },
       { value: "webp", label: "WebP" },
     ],
+  },
+  {
+    key: "backgroundColor",
+    label: "Background Color (for JPEG)",
+    type: "color" as const,
+    defaultValue: "#ffffff",
   },
 ]
 
@@ -50,12 +56,11 @@ async function compressImages(files: any[], options: any) {
 
     const processedFiles = await Promise.all(
       files.map(async (file) => {
-        const quality = parseFloat(options.quality || 70)
         const processedBlob = await ImageProcessor.compressImage(file.originalFile || file.file, {
-          quality: quality,
+          quality: options.quality || 70,
           compressionLevel: options.compressionLevel,
           outputFormat: options.outputFormat,
-          backgroundColor: "#ffffff"
+          backgroundColor: options.backgroundColor || "#ffffff"
         })
 
         const processedUrl = URL.createObjectURL(processedBlob)

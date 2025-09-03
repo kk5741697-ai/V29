@@ -11,7 +11,7 @@ export interface BarcodeOptions {
 }
 
 export class BarcodeProcessor {
-  static generateBarcode(content: string, type: string, options: BarcodeOptions = {}): string {
+  static async generateBarcode(content: string, type: string, options: BarcodeOptions = {}): Promise<string> {
     try {
       if (!content.trim()) {
         throw new Error("Barcode content cannot be empty")

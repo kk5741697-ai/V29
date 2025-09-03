@@ -64,8 +64,20 @@ export class QRProcessor {
         errorCorrectionLevel: options.errorCorrectionLevel || "M",
       }
 
-      // Generate QR code
-      const qrDataURL = await QRCode.toDataURL(text, qrOptions)
+      // Generate QR code with error handling
+      let qrDataURL: string
+      try {
+        qrDataURL = await QRCode.toDataURL(text, qrOptions)
+      } catch (qrError) {
+        // Try with lower error correction if generation fails
+        const fallbackOptions = { ...qrOptions, errorCorrectionLevel: "L" as const }
+        try {
+          qrDataURL = await QRCode.toDataURL(text, fallbackOptions)
+        } catch (fallbackError) {
+          throw new Error("Failed to generate QR code. Content may be too complex.")
+        }
+      }
+
       return qrDataURL
     } catch (error) {
       console.error("QR generation failed:", error)
