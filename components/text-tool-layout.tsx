@@ -335,25 +335,11 @@ export function TextToolLayout({
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-3 lg:py-4">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <span className="text-2xl font-bold text-gray-900">Code</span>
-            <Heart className="h-6 w-6 text-teal-500 fill-teal-500" />
-            <span className="text-2xl font-bold text-gray-900">Beautify</span>
-          </div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2 text-center">{title}</h1>
-          <div className="flex flex-wrap items-center justify-center gap-2 lg:gap-4 mb-4">
-            <Button variant="ghost" className="text-blue-600">
-              <Heart className="h-4 w-4 mr-2" />
-              Add to Fav
-            </Button>
-            <Button className="bg-teal-500 hover:bg-teal-600 text-white">
-              New
-            </Button>
-            <Button variant="outline">
-              Save & Share
-            </Button>
-            {/* Mobile Settings Button */}
-            {isMobile && options.length > 0 && (
+          <p className="text-lg text-muted-foreground text-center mb-4">{description}</p>
+          {/* Mobile Settings Button */}
+          {isMobile && options.length > 0 && (
+            <div className="flex justify-center">
               <Button 
                 variant="outline" 
                 onClick={() => setIsMobileSidebarOpen(true)}
@@ -362,8 +348,8 @@ export function TextToolLayout({
                 <Settings className="h-4 w-4 mr-2" />
                 Options
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -409,19 +395,6 @@ export function TextToolLayout({
                   </div>
                   <div className="text-xs lg:text-sm text-gray-300 italic">Sample</div>
                 </div>
-                
-                <Tabs defaultValue="file" className="w-full hidden lg:block">
-                  <TabsList className="grid w-full grid-cols-2 bg-gray-500">
-                    <TabsTrigger value="file" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-                      <FileText className="h-4 w-4 mr-2" />
-                      File
-                    </TabsTrigger>
-                    <TabsTrigger value="url" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">
-                      <Link className="h-4 w-4 mr-2" />
-                      URL
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
               </CardHeader>
               <CardContent className="px-4 lg:px-6 pt-4 h-[400px] lg:h-[500px] flex flex-col">
                 <Textarea
@@ -443,22 +416,6 @@ export function TextToolLayout({
 
           {/* Center Section - 1/5 width */}
           <div className="lg:col-span-1 flex flex-col justify-center space-y-4">
-            {/* File/URL Tabs */}
-            <div className="bg-white rounded-lg border">
-              <Tabs defaultValue="file" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="file" className="flex items-center space-x-2">
-                    <Upload className="h-4 w-4" />
-                    <span>File</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="url" className="flex items-center space-x-2">
-                    <Link className="h-4 w-4" />
-                    <span>URL</span>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-
             {/* Auto Update Checkbox */}
             <div className="bg-white rounded-lg border p-4">
               <div className="flex items-center space-x-2">
