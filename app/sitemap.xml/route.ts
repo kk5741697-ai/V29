@@ -52,11 +52,12 @@ export async function GET() {
     
     // QR Tools
     { url: '/qr-code-generator', priority: '0.9', changefreq: 'weekly' },
+    { url: '/wifi-qr-code-generator', priority: '0.8', changefreq: 'weekly' },
+    { url: '/email-qr-code-generator', priority: '0.8', changefreq: 'weekly' },
+    { url: '/vcard-qr-code-generator', priority: '0.8', changefreq: 'weekly' },
     { url: '/qr-scanner', priority: '0.8', changefreq: 'weekly' },
     { url: '/barcode-generator', priority: '0.8', changefreq: 'weekly' },
     { url: '/bulk-qr-generator', priority: '0.7', changefreq: 'weekly' },
-    { url: '/wifi-qr-generator', priority: '0.8', changefreq: 'weekly' },
-    { url: '/vcard-qr-generator', priority: '0.8', changefreq: 'weekly' },
     
     // Text Tools
     { url: '/json-formatter', priority: '0.9', changefreq: 'weekly' },

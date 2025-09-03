@@ -7,7 +7,7 @@ export default function VCardQRGeneratorPage() {
   const router = useRouter()
   
   useEffect(() => {
-    router.replace("/qr-code-generator?type=vcard")
+    router.replace("/vcard-qr-code-generator")
   }, [router])
   return null
 }

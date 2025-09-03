@@ -527,6 +527,39 @@ export function ImageToolsLayout({
                           />
                         </div>
                       )}
+
+                      {option.type === "file" && (
+                        <div className="space-y-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              const input = document.createElement("input")
+                              input.type = "file"
+                              input.accept = "image/*"
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0]
+                                if (file) {
+                                  setToolOptions(prev => ({ ...prev, [option.key]: file }))
+                                }
+                              }
+                              input.click()
+                            }}
+                            className="w-full h-10"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {toolOptions[option.key] ? toolOptions[option.key].name : "Choose File"}
+                          </Button>
+                          {toolOptions[option.key] && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setToolOptions(prev => ({ ...prev, [option.key]: null }))}
+                            >
+                              Remove File
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -1049,7 +1082,7 @@ export function ImageToolsLayout({
                               />
                             </div>
                           )}
-                        </div>
+
                           {option.type === "file" && (
                             <div className="space-y-2">
                               <Button
@@ -1082,6 +1115,7 @@ export function ImageToolsLayout({
                               )}
                             </div>
                           )}
+                        </div>
                       )
                     })}
                   </div>

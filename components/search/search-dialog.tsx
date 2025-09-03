@@ -44,11 +44,12 @@ const allTools: SearchResult[] = [
 
   // QR Tools
   { title: "QR Code Generator", description: "Create custom QR codes", href: "/qr-code-generator", category: "QR", icon: QrCode },
+  { title: "WiFi QR Code Generator", description: "Create WiFi QR codes", href: "/wifi-qr-code-generator", category: "QR", icon: QrCode },
+  { title: "Email QR Code Generator", description: "Generate email QR codes", href: "/email-qr-code-generator", category: "QR", icon: QrCode },
+  { title: "vCard QR Code Generator", description: "Generate contact QR codes", href: "/vcard-qr-code-generator", category: "QR", icon: QrCode },
   { title: "QR Scanner", description: "Scan QR codes from images", href: "/qr-scanner", category: "QR", icon: QrCode },
   { title: "Barcode Generator", description: "Generate various barcodes", href: "/barcode-generator", category: "QR", icon: QrCode },
   { title: "Bulk QR Generator", description: "Generate multiple QR codes", href: "/bulk-qr-generator", category: "QR", icon: QrCode },
-  { title: "WiFi QR Generator", description: "Create WiFi QR codes", href: "/wifi-qr-generator", category: "QR", icon: QrCode },
-  { title: "vCard QR Generator", description: "Generate contact QR codes", href: "/vcard-qr-generator", category: "QR", icon: QrCode },
 
   // Text Tools
   { title: "JSON Formatter", description: "Format and validate JSON", href: "/json-formatter", category: "Text", icon: Code },

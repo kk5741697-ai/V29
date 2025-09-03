@@ -81,10 +81,34 @@ export class RealQRProcessor {
           const data = imageData.data
 
           // Apply minimal styling that maintains scannability
-          if (options.style?.shape === "rounded") {
-            this.applyMinimalRounding(data, canvas.width, canvas.height)
-          } else if (options.style?.shape === "dots") {
-            this.applyDotStyle(data, canvas.width, canvas.height)
+          switch (options.style?.shape) {
+            case "rounded":
+              this.applyMinimalRounding(data, canvas.width, canvas.height)
+              break
+            case "dots":
+              this.applyDotStyle(data, canvas.width, canvas.height)
+              break
+            case "diamond":
+              this.applyDiamondStyle(data, canvas.width, canvas.height)
+              break
+            case "star":
+              this.applyStarStyle(data, canvas.width, canvas.height)
+              break
+            case "heart":
+              this.applyHeartStyle(data, canvas.width, canvas.height)
+              break
+            case "circle":
+              this.applyCircleStyle(data, canvas.width, canvas.height)
+              break
+            case "leaf":
+              this.applyLeafStyle(data, canvas.width, canvas.height)
+              break
+            case "classy":
+              this.applyClassyStyle(data, canvas.width, canvas.height)
+              break
+            case "fluid":
+              this.applyFluidStyle(data, canvas.width, canvas.height)
+              break
           }
 
           ctx.putImageData(imageData, 0, 0)
@@ -157,6 +181,271 @@ export class RealQRProcessor {
               if (x >= 0 && x < width && y >= 0 && y < height) {
                 const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2))
                 if (distance <= dotRadius) {
+                  const index = (y * width + x) * 4
+                  data[index] = 0
+                  data[index + 1] = 0
+                  data[index + 2] = 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private static applyDiamondStyle(data: Uint8ClampedArray, width: number, height: number): void {
+    const moduleSize = Math.floor(width / 25)
+    
+    for (let moduleY = 0; moduleY < 25; moduleY++) {
+      for (let moduleX = 0; moduleX < 25; moduleX++) {
+        // Skip finder patterns
+        if ((moduleX < 9 && moduleY < 9) || 
+            (moduleX > 15 && moduleY < 9) || 
+            (moduleX < 9 && moduleY > 15)) {
+          continue
+        }
+
+        const centerX = moduleX * moduleSize + moduleSize / 2
+        const centerY = moduleY * moduleSize + moduleSize / 2
+        
+        const sampleIndex = (Math.floor(centerY) * width + Math.floor(centerX)) * 4
+        if (data[sampleIndex] === 0) {
+          // Draw diamond
+          const diamondSize = moduleSize * 0.4
+          
+          for (let y = Math.floor(centerY - diamondSize); y <= Math.floor(centerY + diamondSize); y++) {
+            for (let x = Math.floor(centerX - diamondSize); x <= Math.floor(centerX + diamondSize); x++) {
+              if (x >= 0 && x < width && y >= 0 && y < height) {
+                const dx = Math.abs(x - centerX)
+                const dy = Math.abs(y - centerY)
+                
+                if (dx + dy <= diamondSize) {
+                  const index = (y * width + x) * 4
+                  data[index] = 0
+                  data[index + 1] = 0
+                  data[index + 2] = 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private static applyStarStyle(data: Uint8ClampedArray, width: number, height: number): void {
+    const moduleSize = Math.floor(width / 25)
+    
+    for (let moduleY = 0; moduleY < 25; moduleY++) {
+      for (let moduleX = 0; moduleX < 25; moduleX++) {
+        if ((moduleX < 9 && moduleY < 9) || 
+            (moduleX > 15 && moduleY < 9) || 
+            (moduleX < 9 && moduleY > 15)) {
+          continue
+        }
+
+        const centerX = moduleX * moduleSize + moduleSize / 2
+        const centerY = moduleY * moduleSize + moduleSize / 2
+        
+        const sampleIndex = (Math.floor(centerY) * width + Math.floor(centerX)) * 4
+        if (data[sampleIndex] === 0) {
+          // Draw simplified star (cross pattern)
+          const starSize = moduleSize * 0.35
+          
+          // Horizontal line
+          for (let x = Math.floor(centerX - starSize); x <= Math.floor(centerX + starSize); x++) {
+            if (x >= 0 && x < width) {
+              const y = Math.floor(centerY)
+              if (y >= 0 && y < height) {
+                const index = (y * width + x) * 4
+                data[index] = 0
+                data[index + 1] = 0
+                data[index + 2] = 0
+              }
+            }
+          }
+          
+          // Vertical line
+          for (let y = Math.floor(centerY - starSize); y <= Math.floor(centerY + starSize); y++) {
+            if (y >= 0 && y < height) {
+              const x = Math.floor(centerX)
+              if (x >= 0 && x < width) {
+                const index = (y * width + x) * 4
+                data[index] = 0
+                data[index + 1] = 0
+                data[index + 2] = 0
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private static applyHeartStyle(data: Uint8ClampedArray, width: number, height: number): void {
+    const moduleSize = Math.floor(width / 25)
+    
+    for (let moduleY = 0; moduleY < 25; moduleY++) {
+      for (let moduleX = 0; moduleX < 25; moduleX++) {
+        if ((moduleX < 9 && moduleY < 9) || 
+            (moduleX > 15 && moduleY < 9) || 
+            (moduleX < 9 && moduleY > 15)) {
+          continue
+        }
+
+        const centerX = moduleX * moduleSize + moduleSize / 2
+        const centerY = moduleY * moduleSize + moduleSize / 2
+        
+        const sampleIndex = (Math.floor(centerY) * width + Math.floor(centerX)) * 4
+        if (data[sampleIndex] === 0) {
+          // Draw simplified heart (circle for now)
+          const heartSize = moduleSize * 0.4
+          
+          for (let y = Math.floor(centerY - heartSize); y <= Math.floor(centerY + heartSize); y++) {
+            for (let x = Math.floor(centerX - heartSize); x <= Math.floor(centerX + heartSize); x++) {
+              if (x >= 0 && x < width && y >= 0 && y < height) {
+                const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2))
+                if (distance <= heartSize) {
+                  const index = (y * width + x) * 4
+                  data[index] = 0
+                  data[index + 1] = 0
+                  data[index + 2] = 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private static applyCircleStyle(data: Uint8ClampedArray, width: number, height: number): void {
+    // Same as dots but with perfect circles
+    this.applyDotStyle(data, width, height)
+  }
+
+  private static applyLeafStyle(data: Uint8ClampedArray, width: number, height: number): void {
+    const moduleSize = Math.floor(width / 25)
+    
+    for (let moduleY = 0; moduleY < 25; moduleY++) {
+      for (let moduleX = 0; moduleX < 25; moduleX++) {
+        if ((moduleX < 9 && moduleY < 9) || 
+            (moduleX > 15 && moduleY < 9) || 
+            (moduleX < 9 && moduleY > 15)) {
+          continue
+        }
+
+        const centerX = moduleX * moduleSize + moduleSize / 2
+        const centerY = moduleY * moduleSize + moduleSize / 2
+        
+        const sampleIndex = (Math.floor(centerY) * width + Math.floor(centerX)) * 4
+        if (data[sampleIndex] === 0) {
+          // Draw leaf shape (ellipse)
+          const leafWidth = moduleSize * 0.5
+          const leafHeight = moduleSize * 0.3
+          
+          for (let y = Math.floor(centerY - leafHeight); y <= Math.floor(centerY + leafHeight); y++) {
+            for (let x = Math.floor(centerX - leafWidth); x <= Math.floor(centerX + leafWidth); x++) {
+              if (x >= 0 && x < width && y >= 0 && y < height) {
+                const dx = (x - centerX) / leafWidth
+                const dy = (y - centerY) / leafHeight
+                
+                if (dx * dx + dy * dy <= 1) {
+                  const index = (y * width + x) * 4
+                  data[index] = 0
+                  data[index + 1] = 0
+                  data[index + 2] = 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private static applyClassyStyle(data: Uint8ClampedArray, width: number, height: number): void {
+    // Enhanced rounded style with better curves
+    const moduleSize = Math.floor(width / 25)
+    const cornerRadius = Math.max(2, Math.floor(moduleSize * 0.25))
+    
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const index = (y * width + x) * 4
+        
+        if (data[index] === 0) {
+          const moduleX = Math.floor(x / moduleSize)
+          const moduleY = Math.floor(y / moduleSize)
+          
+          // Skip finder patterns
+          if ((moduleX < 9 && moduleY < 9) || 
+              (moduleX > 15 && moduleY < 9) || 
+              (moduleX < 9 && moduleY > 15)) {
+            continue
+          }
+          
+          const pixelInModuleX = x % moduleSize
+          const pixelInModuleY = y % moduleSize
+          
+          // Apply rounded corners
+          const isCorner = (pixelInModuleX < cornerRadius && pixelInModuleY < cornerRadius) ||
+                          (pixelInModuleX >= moduleSize - cornerRadius && pixelInModuleY < cornerRadius) ||
+                          (pixelInModuleX < cornerRadius && pixelInModuleY >= moduleSize - cornerRadius) ||
+                          (pixelInModuleX >= moduleSize - cornerRadius && pixelInModuleY >= moduleSize - cornerRadius)
+          
+          if (isCorner) {
+            const cornerCenterX = pixelInModuleX < moduleSize / 2 ? cornerRadius : moduleSize - cornerRadius
+            const cornerCenterY = pixelInModuleY < moduleSize / 2 ? cornerRadius : moduleSize - cornerRadius
+            
+            const distance = Math.sqrt(
+              Math.pow(pixelInModuleX - cornerCenterX, 2) + 
+              Math.pow(pixelInModuleY - cornerCenterY, 2)
+            )
+            
+            if (distance > cornerRadius) {
+              data[index] = 128
+              data[index + 1] = 128
+              data[index + 2] = 128
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private static applyFluidStyle(data: Uint8ClampedArray, width: number, height: number): void {
+    // Smooth flowing style with organic curves
+    const moduleSize = Math.floor(width / 25)
+    
+    for (let moduleY = 0; moduleY < 25; moduleY++) {
+      for (let moduleX = 0; moduleX < 25; moduleX++) {
+        if ((moduleX < 9 && moduleY < 9) || 
+            (moduleX > 15 && moduleY < 9) || 
+            (moduleX < 9 && moduleY > 15)) {
+          continue
+        }
+
+        const centerX = moduleX * moduleSize + moduleSize / 2
+        const centerY = moduleY * moduleSize + moduleSize / 2
+        
+        const sampleIndex = (Math.floor(centerY) * width + Math.floor(centerX)) * 4
+        if (data[sampleIndex] === 0) {
+          // Draw organic blob shape
+          const blobSize = moduleSize * 0.45
+          
+          for (let y = Math.floor(centerY - blobSize); y <= Math.floor(centerY + blobSize); y++) {
+            for (let x = Math.floor(centerX - blobSize); x <= Math.floor(centerX + blobSize); x++) {
+              if (x >= 0 && x < width && y >= 0 && y < height) {
+                const dx = x - centerX
+                const dy = y - centerY
+                
+                // Create organic shape with slight randomness
+                const angle = Math.atan2(dy, dx)
+                const radiusVariation = 1 + 0.1 * Math.sin(angle * 6)
+                const distance = Math.sqrt(dx * dx + dy * dy)
+                
+                if (distance <= blobSize * radiusVariation) {
                   const index = (y * width + x) * 4
                   data[index] = 0
                   data[index + 1] = 0

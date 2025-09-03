@@ -358,6 +358,22 @@ export function PDFToolsLayout({
                           className="h-10"
                         />
                       )}
+
+                      {option.type === "color" && (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="color"
+                            value={toolOptions[option.key] || option.defaultValue}
+                            onChange={(e) => setToolOptions(prev => ({ ...prev, [option.key]: e.target.value }))}
+                            className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                          />
+                          <Input
+                            value={toolOptions[option.key] || option.defaultValue}
+                            onChange={(e) => setToolOptions(prev => ({ ...prev, [option.key]: e.target.value }))}
+                            className="flex-1 font-mono text-xs"
+                          />
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -831,6 +847,22 @@ export function PDFToolsLayout({
                               max={option.max}
                               className="h-9"
                             />
+                          )}
+
+                          {option.type === "color" && (
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="color"
+                                value={toolOptions[option.key] || option.defaultValue}
+                                onChange={(e) => setToolOptions(prev => ({ ...prev, [option.key]: e.target.value }))}
+                                className="w-10 h-8 border border-gray-300 rounded cursor-pointer"
+                              />
+                              <Input
+                                value={toolOptions[option.key] || option.defaultValue}
+                                onChange={(e) => setToolOptions(prev => ({ ...prev, [option.key]: e.target.value }))}
+                                className="flex-1 font-mono text-xs"
+                              />
+                            </div>
                           )}
                         </div>
                       )

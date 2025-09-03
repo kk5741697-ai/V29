@@ -7,7 +7,7 @@ export default function WiFiQRGeneratorPage() {
   const router = useRouter()
   
   useEffect(() => {
-    router.replace("/qr-code-generator?type=wifi")
+    router.replace("/wifi-qr-code-generator")
   }, [router])
   return null
 }
