@@ -6,7 +6,11 @@ simple-*
 improved-*
 advanced-*
 etc.
-
+any types of errors should not have in any bugs or problems in
+@/lib/*
+@/components/*
+@/app/*
+or any other things
 never create unnecessary files, example: suppose i have already file image-processor.ts, now when i try to new chat or anything else, don't create like this or like anything duplicate real-image-processor.ts etc. hope you understand, you can just update the existing image-processor.ts initiate of real-image-processor.ts
 
 image, pdf, and qr code tools will be same layout.
