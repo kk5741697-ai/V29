@@ -16,7 +16,29 @@ import { Badge } from "@/components/ui/badge"
 import { RealQRProcessor } from "@/lib/processors/real-qr-processor"
 import { QrCode, Download, Copy, Upload, Eye, EyeOff } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { AdBanner } from "@/components/ads/ad-banner"
 import { useSearchParams } from "next/navigation"
+
+const qrStyles = [
+  { value: "square", label: "Square", description: "Classic square modules" },
+  { value: "rounded", label: "Rounded", description: "Rounded corner modules" },
+  { value: "dots", label: "Dots", description: "Circular dot modules" },
+  { value: "diamond", label: "Diamond", description: "Diamond shaped modules" },
+  { value: "star", label: "Star", description: "Star shaped modules" },
+  { value: "heart", label: "Heart", description: "Heart shaped modules" },
+  { value: "circle", label: "Circle", description: "Perfect circle modules" },
+  { value: "leaf", label: "Leaf", description: "Leaf shaped modules" },
+  { value: "classy", label: "Classy", description: "Elegant rounded style" },
+  { value: "fluid", label: "Fluid", description: "Smooth flowing style" },
+]
+
+const eyeStyles = [
+  { value: "square", label: "Square Eyes" },
+  { value: "rounded", label: "Rounded Eyes" },
+  { value: "leaf", label: "Leaf Eyes" },
+  { value: "circle", label: "Circle Eyes" },
+  { value: "diamond", label: "Diamond Eyes" },
+]
 
 export default function QRCodeGeneratorPage() {
   const searchParams = useSearchParams()
@@ -505,6 +527,32 @@ export default function QRCodeGeneratorPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* QR Tool Navigation */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex flex-wrap gap-2 justify-center">
+            <Button variant="default" size="sm" asChild>
+              <a href="/qr-code-generator">QR Generator</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/wifi-qr-code-generator">WiFi QR</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/email-qr-code-generator">Email QR</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/vcard-qr-code-generator">vCard QR</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/qr-scanner">QR Scanner</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/barcode-generator">Barcode</a>
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
@@ -631,10 +679,31 @@ export default function QRCodeGeneratorPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="L">Low (7%)</SelectItem>
-                      <SelectItem value="M">Medium (15%)</SelectItem>
-                      <SelectItem value="Q">Quartile (25%)</SelectItem>
+                      {qrStyles.map((style) => (
+                        <SelectItem key={style.value} value={style.value}>
+                          <div>
+                            <div className="font-medium">{style.label}</div>
+                            <div className="text-xs text-muted-foreground">{style.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
                       <SelectItem value="H">High (30%)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Eye Style</Label>
+                  <Select value={eyeStyle} onValueChange={setEyeStyle}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eyeStyles.map((style) => (
+                        <SelectItem key={style.value} value={style.value}>
+                          {style.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -721,6 +790,15 @@ export default function QRCodeGeneratorPage() {
                         className="mx-auto border rounded-lg shadow-lg bg-white p-4"
                         style={{ maxWidth: "400px", width: "100%" }}
                       />
+                      
+                      {/* Canvas Ad */}
+                      <div className="my-4">
+                        <AdBanner 
+                          adSlot="qr-generator-canvas"
+                          adFormat="auto"
+                          className="w-full"
+                        />
+                      </div>
                       {isGenerating && (
                         <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

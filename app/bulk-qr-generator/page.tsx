@@ -176,6 +176,35 @@ export default function BulkQRGeneratorPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* QR Tool Navigation */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex flex-wrap gap-2 justify-center">
+            <Button variant="outline" size="sm" asChild>
+              <a href="/qr-code-generator">QR Generator</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/wifi-qr-code-generator">WiFi QR</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/email-qr-code-generator">Email QR</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/vcard-qr-code-generator">vCard QR</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/qr-scanner">QR Scanner</a>
+            </Button>
+            <Button variant="default" size="sm" asChild>
+              <a href="/bulk-qr-generator">Bulk QR</a>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/barcode-generator">Barcode</a>
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
