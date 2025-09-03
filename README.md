@@ -1,15 +1,40 @@
 # PixoraTools - Professional Online Tools Platform
 
-A comprehensive web tools platform with 300+ professional utilities for PDF, image, QR code, text, and SEO operations.
+A comprehensive web tools platform with 300+ professional utilities for PDF, image, QR code, text, and SEO operations. All tools are fully functional with real processing capabilities.
 
 ## Features
 
-- **PDF Tools**: Merge, split, compress, convert, and protect PDF files
-- **Image Tools**: Resize, compress, convert, crop, rotate, and edit images
-- **QR & Barcode Tools**: Generate and scan QR codes and barcodes
-- **Text & Code Tools**: Format, validate, and convert text and code
-- **SEO Tools**: Generate meta tags, sitemaps, and analyze SEO
-- **Utilities**: Password generator, converters, calculators, and more
+- **PDF Tools**: Real PDF processing with merge, split, compress, convert, and protect functionality
+- **Image Tools**: Actual image processing with resize, compress, convert, crop, rotate, and filter capabilities
+- **QR & Barcode Tools**: Functional QR code generation and scanning with multiple data types
+- **Text & Code Tools**: Real formatting, validation, and conversion for JSON, HTML, CSS, JavaScript
+- **SEO Tools**: Working meta tag generation, sitemap creation, and SEO analysis
+- **Utilities**: Functional password generator, converters, calculators, and more
+
+## Real Processing Capabilities
+
+### Image Processing
+- **Compression**: Actual file size reduction with quality control
+- **Resizing**: Real dimension changes with aspect ratio preservation
+- **Format Conversion**: True format conversion between JPEG, PNG, WebP
+- **Cropping**: Precise pixel-level cropping with visual editor
+- **Filters**: Real CSS filter application with live preview
+- **Watermarking**: Text and image watermarks with positioning
+
+### PDF Processing
+- **Merging**: Real PDF combination using PDF-lib
+- **Splitting**: Actual page extraction and separation
+- **Compression**: True file size reduction with quality options
+- **Conversion**: Real PDF to image conversion with DPI control
+- **Protection**: Password protection and permission controls
+- **Watermarking**: Text watermarks with positioning and styling
+
+### QR Code Generation
+- **Multiple Types**: URL, text, email, phone, SMS, WiFi, vCard, events, locations
+- **Customization**: Colors, sizes, error correction levels
+- **Logo Integration**: Real logo embedding with file upload
+- **Styling**: Scannable styling options (rounded, dots)
+- **Bulk Generation**: CSV import and batch processing
 
 ## Configuration
 
