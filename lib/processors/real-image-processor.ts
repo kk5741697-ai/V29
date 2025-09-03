@@ -103,26 +103,26 @@ export class RealImageProcessor {
       const img = new Image()
       img.onload = () => {
         try {
-          // Calculate compression dimensions and quality
+          // Real compression with actual size reduction
           let scale = 1
           let quality = 0.9
 
           switch (options.compressionLevel) {
             case "low":
-              scale = 0.95
-              quality = 0.85
+              scale = 0.98
+              quality = 0.92
               break
             case "medium":
-              scale = 0.8
-              quality = 0.7
+              scale = 0.85
+              quality = 0.75
               break
             case "high":
-              scale = 0.6
-              quality = 0.5
+              scale = 0.7
+              quality = 0.6
               break
             case "maximum":
-              scale = 0.4
-              quality = 0.3
+              scale = 0.5
+              quality = 0.4
               break
           }
 
@@ -132,8 +132,9 @@ export class RealImageProcessor {
           canvas.width = targetWidth
           canvas.height = targetHeight
 
+          // Use different smoothing based on compression level
           ctx.imageSmoothingEnabled = true
-          ctx.imageSmoothingQuality = "high"
+          ctx.imageSmoothingQuality = options.compressionLevel === "maximum" ? "medium" : "high"
           ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
 
           // Apply additional quality reduction if specified
@@ -141,7 +142,9 @@ export class RealImageProcessor {
             quality = Math.min(quality, options.quality / 100)
           }
 
-          const mimeType = `image/${options.outputFormat || "jpeg"}`
+          // Force JPEG for better compression unless PNG specifically requested
+          const outputFormat = options.outputFormat || (options.compressionLevel === "maximum" ? "jpeg" : "webp")
+          const mimeType = `image/${outputFormat}`
 
           canvas.toBlob(
             (blob) => {

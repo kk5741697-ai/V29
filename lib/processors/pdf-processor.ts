@@ -52,15 +52,19 @@ export interface PDFPageInfo {
   height: number
   thumbnail: string
   rotation: number
+  selected?: boolean
+}
+
+export class PDFProcessor {
   static async mergePDFs(files: File[], options: PDFProcessingOptions = {}): Promise<Uint8Array> {
     return RealPDFProcessor.mergePDFs(files, options)
   }
-  selected?: boolean
+
   static async splitPDF(file: File, ranges: Array<{ from: number; to: number }>, options: PDFProcessingOptions = {}): Promise<Uint8Array[]> {
     const selectedPages = options.selectedPages || []
     return RealPDFProcessor.splitPDF(file, selectedPages, options)
   }
-}
+
   static async compressPDF(file: File, options: PDFProcessingOptions = {}): Promise<Uint8Array> {
     return RealPDFProcessor.compressPDF(file, options)
   }
@@ -68,20 +72,24 @@ export interface PDFPageInfo {
   static async addPasswordProtection(file: File, password: string, permissions: string[] = []): Promise<Uint8Array> {
     return RealPDFProcessor.addPasswordProtection(file, password, permissions)
   }
-export class PDFProcessor {
+
   static async addWatermark(file: File, watermarkText: string, options: PDFProcessingOptions = {}): Promise<Uint8Array> {
     return RealPDFProcessor.addWatermark(file, watermarkText, options)
   }
-  static async getPDFInfo(file: File): Promise<{ pageCount: number; pages: PDFPageInfo[] }> {
+
   static async pdfToImages(file: File, options: PDFProcessingOptions = {}): Promise<Blob[]> {
     return RealPDFProcessor.pdfToImages(file, options)
   }
-    return RealPDFProcessor.getPDFInfo(file)
+
   static async pdfToWord(file: File, options: PDFProcessingOptions = {}): Promise<Uint8Array> {
     return RealPDFProcessor.pdfToWord(file, options)
   }
-  }
+
   static async imagesToPDF(imageFiles: File[], options: PDFProcessingOptions = {}): Promise<Uint8Array> {
     return RealPDFProcessor.imagesToPDF(imageFiles, options)
+  }
+
+  static async getPDFInfo(file: File): Promise<{ pageCount: number; pages: PDFPageInfo[] }> {
+    return RealPDFProcessor.getPDFInfo(file)
   }
 }
