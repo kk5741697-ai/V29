@@ -33,7 +33,10 @@ import {
   Redo,
   Save,
   FolderOpen,
-  Edit
+  Edit,
+  Check,
+  X,
+  Info
 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { AdBanner } from "@/components/ads/ad-banner"
@@ -451,6 +454,62 @@ export function TextToolLayout({
               </div>
             </div>
 
+            {/* Tool Options Card */}
+            {options.length > 0 && !isMobile && (
+              <Card className="bg-white">
+                <CardContent className="p-4 space-y-4">
+                  {options.map((option) => (
+                    <div key={option.key} className="space-y-2">
+                      {option.type === "select" && (
+                        <div>
+                          <Label className="text-xs font-medium text-gray-600">{option.label}</Label>
+                          <Select
+                            value={toolOptions[option.key]?.toString()}
+                            onValueChange={(value) => setToolOptions(prev => ({ ...prev, [option.key]: value }))}
+                          >
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {option.selectOptions?.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {option.type === "checkbox" && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={toolOptions[option.key] || false}
+                            onCheckedChange={(checked) => setToolOptions(prev => ({ ...prev, [option.key]: checked }))}
+                          />
+                          <Label className="text-xs font-medium">{option.label}</Label>
+                        </div>
+                      )}
+
+                      {option.type === "slider" && (
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">{option.label}: {toolOptions[option.key] || option.defaultValue}</Label>
+                          <Slider
+                            value={[toolOptions[option.key] || option.defaultValue]}
+                            onValueChange={([value]) => setToolOptions(prev => ({ ...prev, [option.key]: value }))}
+                            min={option.min}
+                            max={option.max}
+                            step={option.step}
+                            className="h-1"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Ad Banner */}
             <div className="bg-white rounded-lg border p-2">
               <AdBanner 
@@ -481,10 +540,54 @@ export function TextToolLayout({
               Download
             </Button>
 
-            {/* Additional Tool Link */}
-            <Button variant="outline" className="w-full text-blue-600 hidden lg:flex">
-              JSON Sorter
-            </Button>
+            {/* Additional Tool Links */}
+            <div className="space-y-2">
+              {title.includes("JSON") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/json-formatter">JSON Sorter</a>
+                </Button>
+              )}
+              {title.includes("XML") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/xml-formatter">XML Validator</a>
+                </Button>
+              )}
+              {title.includes("HTML") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/html-formatter">HTML Minifier</a>
+                </Button>
+              )}
+              {title.includes("CSS") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/css-minifier">CSS Beautifier</a>
+                </Button>
+              )}
+              {title.includes("JavaScript") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/js-minifier">JS Beautifier</a>
+                </Button>
+              )}
+              {title.includes("Base64") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/url-encoder">URL Encoder</a>
+                </Button>
+              )}
+              {title.includes("URL") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/base64-encoder">Base64 Encoder</a>
+                </Button>
+              )}
+              {title.includes("Hash") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/password-generator">Password Gen</a>
+                </Button>
+              )}
+              {title.includes("Case") && (
+                <Button variant="outline" className="w-full text-blue-600 text-sm py-2" asChild>
+                  <a href="/text-diff-checker">Text Diff</a>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Output Panel - 2/5 width */}
@@ -544,67 +647,6 @@ export function TextToolLayout({
             </Card>
           </div>
         </div>
-
-        {/* Tool Options */}
-        {options.length > 0 && !isMobile && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Options</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {options.map((option) => (
-                  <div key={option.key} className="space-y-2">
-                    <Label className="text-sm font-medium">{option.label}</Label>
-                    
-                    {option.type === "select" && (
-                      <Select
-                        value={toolOptions[option.key]?.toString()}
-                        onValueChange={(value) => setToolOptions(prev => ({ ...prev, [option.key]: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {option.selectOptions?.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {option.type === "checkbox" && (
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={toolOptions[option.key] || false}
-                          onCheckedChange={(checked) => setToolOptions(prev => ({ ...prev, [option.key]: checked }))}
-                        />
-                        <span className="text-sm">{option.label}</span>
-                      </div>
-                    )}
-
-                    {option.type === "slider" && (
-                      <div className="space-y-2">
-                        <Slider
-                          value={[toolOptions[option.key] || option.defaultValue]}
-                          onValueChange={([value]) => setToolOptions(prev => ({ ...prev, [option.key]: value }))}
-                          min={option.min}
-                          max={option.max}
-                          step={option.step}
-                        />
-                        <div className="text-xs text-gray-500 text-center">
-                          {toolOptions[option.key] || option.defaultValue}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Stats Display */}
         {stats && (
