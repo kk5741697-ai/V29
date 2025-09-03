@@ -45,7 +45,8 @@ async function mergePDFs(files: any[], options: any) {
     const fileObjects = files.map((f: any) => f.originalFile || f.file)
     const mergedPdfBytes = await PDFProcessor.mergePDFs(fileObjects, {
       addBookmarks: options.addBookmarks,
-      preserveMetadata: options.preserveMetadata
+      preserveMetadata: options.preserveMetadata,
+      compressionLevel: "medium"
     })
 
     // Create proper blob and download URL
@@ -55,6 +56,7 @@ async function mergePDFs(files: any[], options: any) {
     return {
       success: true,
       downloadUrl,
+      filename: "merged-document.pdf"
     }
   } catch (error) {
     return {

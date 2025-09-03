@@ -44,7 +44,6 @@ async function compressPDF(files: any[], options: any) {
     }
 
     const compressionOptions = {
-      quality: Math.max(10, Math.min(100, options.quality || 80)),
       compressionLevel: options.compressionLevel,
       optimizeImages: Boolean(options.optimizeImages),
       removeMetadata: Boolean(options.removeMetadata),
@@ -59,6 +58,7 @@ async function compressPDF(files: any[], options: any) {
       return {
         success: true,
         downloadUrl,
+        filename: `compressed_${files[0].name}`
       }
     } else {
       // Multiple files - always create ZIP
@@ -77,6 +77,7 @@ async function compressPDF(files: any[], options: any) {
       return {
         success: true,
         downloadUrl,
+        filename: "compressed_pdfs.zip"
       }
     }
   } catch (error) {

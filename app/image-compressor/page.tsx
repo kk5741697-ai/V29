@@ -52,9 +52,10 @@ async function compressImages(files: any[], options: any) {
       files.map(async (file) => {
         const quality = parseFloat(options.quality || 70)
         const processedBlob = await ImageProcessor.compressImage(file.originalFile || file.file, {
-          quality,
+          quality: quality,
           compressionLevel: options.compressionLevel,
           outputFormat: options.outputFormat,
+          backgroundColor: "#ffffff"
         })
 
         const processedUrl = URL.createObjectURL(processedBlob)

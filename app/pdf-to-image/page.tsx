@@ -54,10 +54,10 @@ async function convertPDFToImage(files: any[], options: any) {
     }
 
     const conversionOptions = {
-      outputFormat: options.outputFormat,
       dpi: Number.parseInt(options.resolution),
-      colorMode: options.colorMode,
-      imageQuality: 90,
+      outputFormat: options.outputFormat,
+      quality: 90,
+      colorMode: options.colorMode
     }
 
     // Always create ZIP with all images

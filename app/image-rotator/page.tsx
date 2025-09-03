@@ -27,11 +27,13 @@ async function rotateImages(files: any[], options: any) {
 
     const processedFiles = await Promise.all(
       files.map(async (file) => {
-        const angle = options.customAngle || 0
+        const angle = options.rotation ? parseInt(options.rotation) : (options.customAngle || 0)
         
         const processedBlob = await ImageProcessor.rotateImage(file.originalFile || file.file, {
           customRotation: angle,
-          outputFormat: "png",
+          outputFormat: options.outputFormat || "png",
+          quality: 90,
+          backgroundColor: "#ffffff"
         })
 
         const processedUrl = URL.createObjectURL(processedBlob)

@@ -62,7 +62,7 @@ export default function BarcodeGeneratorPage() {
         margin: 20
       }
 
-      const dataUrl = BarcodeProcessor.generateBarcode(content, barcodeType, barcodeOptions)
+      const dataUrl = await BarcodeProcessor.generateBarcode(content, barcodeType, barcodeOptions)
       setBarcodeDataUrl(dataUrl)
     } catch (error) {
       console.error("Barcode generation failed:", error)

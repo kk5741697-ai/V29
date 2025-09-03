@@ -98,8 +98,8 @@ async function splitPDF(files: any[], options: any) {
     
     const splitResults = await PDFProcessor.splitPDF(
       file.originalFile || file.file, 
-      pageRanges, 
-      { ...options, extractMode: "pages" }
+      selectedPages,
+      { ...options }
     )
 
     if (splitResults.length === 1) {

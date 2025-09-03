@@ -22,11 +22,13 @@ async function flipImages(files: any[], options: any) {
   try {
     const processedFiles = await Promise.all(
       files.map(async (file) => {
-        const processedBlob = await ImageProcessor.resizeImage(
+        const processedBlob = await ImageProcessor.rotateImage(
           file.originalFile || file.file,
           {
-            flipDirection: options.flipDirection,
-            outputFormat: "png",
+            customRotation: 0, // No rotation, just flipping
+            outputFormat: options.outputFormat || "png",
+            quality: 90,
+            backgroundColor: "#ffffff"
           }
         )
 

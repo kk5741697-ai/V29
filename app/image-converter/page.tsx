@@ -34,7 +34,8 @@ async function convertImages(files: any[], options: any) {
           file.originalFile || file.file,
           options.outputFormat as "jpeg" | "png" | "webp",
           {
-            outputFormat: options.outputFormat as "jpeg" | "png" | "webp",
+            quality: 90,
+            backgroundColor: "#ffffff"
           }
         )
 

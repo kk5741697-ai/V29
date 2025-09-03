@@ -30,6 +30,28 @@ const resizeOptions = [
     defaultValue: true,
     section: "Dimensions",
   },
+  {
+    key: "outputFormat",
+    label: "Output Format",
+    type: "select" as const,
+    defaultValue: "png",
+    selectOptions: [
+      { value: "jpeg", label: "JPEG" },
+      { value: "png", label: "PNG" },
+      { value: "webp", label: "WebP" },
+    ],
+    section: "Output",
+  },
+  {
+    key: "quality",
+    label: "Quality",
+    type: "slider" as const,
+    defaultValue: 90,
+    min: 10,
+    max: 100,
+    step: 5,
+    section: "Output",
+  },
 ]
 
 const resizePresets = [
@@ -67,7 +89,9 @@ async function resizeImages(files: any[], options: any) {
           width: targetWidth,
           height: targetHeight,
           maintainAspectRatio: options.maintainAspectRatio,
-          outputFormat: "png"
+          outputFormat: options.outputFormat || "png",
+          quality: options.quality || 90,
+          backgroundColor: "#ffffff"
         })
 
         const processedUrl = URL.createObjectURL(processedBlob)
