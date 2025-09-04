@@ -152,14 +152,15 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-heading font-bold text-gray-900 mb-6 leading-tight">
-            Every Tool You Could Want
+            Free Online Tools
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              To Edit Images in Bulk
+              For Everyone
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-16 max-w-4xl mx-auto leading-relaxed">
-            Your online photo editor is here and forever free! Compress, resize, crop, convert images and more with 300+ professional tools.
-            <span className="font-semibold text-gray-800">Fast, secure, and completely free.</span>
+            Process files instantly in your browser with our comprehensive collection of free online tools. 
+            Edit PDFs, compress images, generate QR codes, format code, and much more.
+            <span className="font-semibold text-gray-800"> No registration required, completely free forever.</span>
           </p>
 
           {/* Search Bar */}

@@ -23,27 +23,35 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: {
     template: "%s - PixoraTools",
-    default: "PixoraTools - Professional Online Tools Platform"
+    default: "PixoraTools - Free Online Tools for PDF, Image, QR Code & More"
   },
   description:
-    "Your online photo editor is here and forever free! Compress, resize, crop, convert images and more with 300+ professional tools.",
+    "Free online tools for PDF editing, image processing, QR code generation, and text formatting. Compress, resize, crop, convert files instantly in your browser. No registration required.",
   generator: "PixoraTools",
-  keywords: "image tools, pdf tools, qr generator, online tools, photo editor, image converter, pdf merger, compress image, resize image, crop image, convert image, background remover, web tools, free tools",
+  keywords: "free online tools, PDF editor, image compressor, QR code generator, photo editor, file converter, web tools, image resizer, PDF merger, text formatter, online utilities, browser tools",
   robots: "index, follow",
   openGraph: {
-    title: "PixoraTools - Professional Online Tools Platform",
-    description: "300+ professional web tools for PDF, image, QR, code, and SEO tasks. Fast, secure, and free.",
+    title: "PixoraTools - Free Online Tools for Everyone",
+    description: "Free online tools for PDF editing, image processing, QR codes, and more. Process files securely in your browser without registration.",
     type: "website",
     locale: "en_US",
+    siteName: "PixoraTools",
+    url: "https://pixoratools.com",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PixoraTools - Professional Online Tools",
-    description: "300+ professional web tools for PDF, image, QR, code, and SEO tasks.",
+    title: "PixoraTools - Free Online Tools",
+    description: "Free online tools for PDF editing, image processing, QR codes, and more. No registration required.",
+    site: "@pixoratools",
   },
   verification: {
     google: "google6adf6312a96691f1",
   },
+  alternates: {
+    canonical: "https://pixoratools.com",
+  },
+  category: "Technology",
+  classification: "Online Tools",
 }
 
 export function generateViewport() {

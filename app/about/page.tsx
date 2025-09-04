@@ -122,8 +122,9 @@ export default function AboutPage() {
             </span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            We believe that powerful tools should be accessible to everyone. That's why we've created the most comprehensive 
-            collection of professional web tools that work instantly in your browser, completely free.
+            We believe that powerful tools should be accessible to everyone. That's why we've created a comprehensive 
+            collection of free web tools that work instantly in your browser. Our mission is to provide high-quality, 
+            professional-grade tools without cost barriers, registration requirements, or hidden fees.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
